@@ -1,0 +1,199 @@
+/* ============================================================
+LAB VIRTUAL — SAPONIFICACIÓN
+Diseño: química orgánica + ciencia moderna
+Fuentes: Syne (display) + DM Sans (body)
+   ============================================================ */
+
+:root {
+  /* Paleta principal */
+--clr-bg:        #06080f;
+--clr-bg-card:   #0d1420;
+--clr-bg-glass:  rgba(255, 255, 255, 0.04);
+--clr-border:    rgba(255, 255, 255, 0.08);
+
+  --clr-accent:    #00e5c3;   /* verde-cian científico */
+  --clr-accent2:   #4f8eff;   /* azul laboratorio */
+  --clr-accent3:   #ff6b35;   /* naranja reacción */
+  --clr-warn:      #ffd166;   /* amarillo advertencia */
+
+--clr-text:      #e8eaf0;
+--clr-text-muted:#7b8399;
+
+  /* Tipografía */
+--font-display:  'Syne', sans-serif;
+--font-body:     'DM Sans', sans-serif;
+
+  /* Espaciado */
+--radius-sm:     6px;
+--radius-md:     12px;
+--radius-lg:     20px;
+--radius-xl:     32px;
+
+  /* Sombras */
+--shadow-glow:   0 0 32px rgba(0, 229, 195, 0.15);
+--shadow-card:   0 4px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Reset base */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+font-family: var(--font-body);
+background-color: var(--clr-bg);
+color: var(--clr-text);
+min-height: 100vh;
+-webkit-font-smoothing: antialiased;
+overflow-x: hidden;
+}
+
+/* Fondo animado sutil */
+body::before {
+content: '';
+position: fixed;
+inset: 0;
+background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79, 142, 255, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 229, 195, 0.05) 0%, transparent 60%);
+pointer-events: none;
+z-index: 0;
+}
+
+/* Shell principal */
+.app-shell {
+display: flex;
+flex-direction: column;
+min-height: 100vh;
+position: relative;
+z-index: 1;
+}
+
+.app-main {
+flex: 1;
+display: flex;
+flex-direction: column;
+}
+
+/* Cards de vidrio */
+.glass-card {
+background: var(--clr-bg-glass);
+border: 1px solid var(--clr-border);
+border-radius: var(--radius-lg);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+}
+
+/* Botón primario */
+.btn-primary {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+background: var(--clr-accent);
+color: #06080f;
+font-family: var(--font-display);
+font-weight: 600;
+font-size: 0.95rem;
+padding: 12px 28px;
+border-radius: var(--radius-xl);
+border: none;
+cursor: pointer;
+text-decoration: none;
+transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+letter-spacing: 0.02em;
+}
+
+.btn-primary:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 24px rgba(0, 229, 195, 0.35);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+/* Botón secundario */
+.btn-secondary {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+background: transparent;
+color: var(--clr-text);
+font-family: var(--font-display);
+font-weight: 500;
+font-size: 0.95rem;
+padding: 11px 26px;
+border-radius: var(--radius-xl);
+border: 1px solid var(--clr-border);
+cursor: pointer;
+text-decoration: none;
+transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.btn-secondary:hover {
+border-color: var(--clr-accent);
+background: rgba(0, 229, 195, 0.06);
+}
+
+/* Badge de módulo */
+.module-badge {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-family: var(--font-display);
+font-size: 0.75rem;
+font-weight: 600;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+padding: 4px 12px;
+border-radius: 100px;
+}
+
+/* Placeholder para canvas 3D */
+.canvas-placeholder {
+width: 100%;
+min-height: 400px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 16px;
+border: 1px dashed rgba(0, 229, 195, 0.25);
+border-radius: var(--radius-lg);
+background: rgba(0, 229, 195, 0.02);
+color: var(--clr-text-muted);
+font-family: var(--font-body);
+font-size: 0.9rem;
+}
+
+.canvas-placeholder .icon {
+font-size: 3rem;
+opacity: 0.4;
+}
+
+/* Animaciones de entrada */
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(20px); }
+to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 195, 0.2); }
+50%       { box-shadow: 0 0 40px rgba(0, 229, 195, 0.4); }
+}
+
+.fade-up { animation: fadeUp 0.6s ease forwards; }
+.fade-up-delay-1 { animation: fadeUp 0.6s 0.1s ease both; }
+.fade-up-delay-2 { animation: fadeUp 0.6s 0.2s ease both; }
+.fade-up-delay-3 { animation: fadeUp 0.6s 0.3s ease both; }
+.fade-up-delay-4 { animation: fadeUp 0.6s 0.45s ease both; }
+
+/* Utilidades */
+.text-accent  { color: var(--clr-accent); }
+.text-accent2 { color: var(--clr-accent2); }
+.text-accent3 { color: var(--clr-accent3); }
+.text-muted   { color: var(--clr-text-muted); }
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--clr-bg); }
+::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }

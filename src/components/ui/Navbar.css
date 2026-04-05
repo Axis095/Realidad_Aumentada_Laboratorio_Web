@@ -1,0 +1,136 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 32px;
+  background: rgba(6, 8, 15, 0.8);
+  border-bottom: 1px solid var(--clr-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+ 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--clr-text);
+  flex-shrink: 0;
+}
+ 
+.brand-icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 195, 0.5));
+}
+ 
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+ 
+.brand-main {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--clr-text);
+}
+ 
+.brand-sub {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.08em;
+}
+ 
+.navbar-modules {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+ 
+.nav-module-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--clr-text-muted);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  transition: all 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-module-btn::before {
+content: '';
+position: absolute;
+inset: 0;
+background: var(--mod-color);
+opacity: 0;
+transition: opacity 0.22s ease;
+}
+
+.nav-module-btn:hover {
+color: var(--clr-text);
+border-color: var(--clr-border);
+}
+
+.nav-module-btn:hover::before { opacity: 0.06; }
+
+.nav-module-btn.active {
+color: var(--clr-text);
+border-color: var(--mod-color);
+}
+
+.nav-module-btn.active::before { opacity: 0.1; }
+
+.mod-num {
+font-family: var(--font-display);
+font-weight: 700;
+font-size: 0.7rem;
+letter-spacing: 0.05em;
+color: var(--mod-color);
+position: relative;
+}
+
+.mod-label {
+position: relative;
+font-weight: 400;
+}
+
+.navbar-actions {
+flex-shrink: 0;
+}
+
+.navbar-course {
+font-size: 0.75rem;
+color: var(--clr-text-muted);
+font-style: italic;
+letter-spacing: 0.03em;
+}
+
+@media (max-width: 768px) {
+.navbar {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 12px;
+}
+.navbar-modules {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+.navbar-actions { display: none; }
+.mod-label { display: none; }
+}
