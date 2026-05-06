@@ -1,27 +1,27 @@
 /* ============================================================
 LAB VIRTUAL — SAPONIFICACIÓN
-Diseño: química orgánica + ciencia moderna
-Fuentes: Syne (display) + DM Sans (body)
+Diseño: colores amigables para niños + fuentes dinámicas
+Fuentes: Fredoka One (display) + Nunito (body)
    ============================================================ */
 
 :root {
   /* Paleta principal */
---clr-bg:        #06080f;
---clr-bg-card:   #0d1420;
---clr-bg-glass:  rgba(255, 255, 255, 0.04);
---clr-border:    rgba(255, 255, 255, 0.08);
+--clr-bg:        #e6f3ff;
+--clr-bg-card:   #ffffff;
+--clr-bg-glass:  rgba(255, 255, 255, 0.95);
+--clr-border:    #cccccc;
 
-  --clr-accent:    #00e5c3;   /* verde-cian científico */
-  --clr-accent2:   #4f8eff;   /* azul laboratorio */
-  --clr-accent3:   #ff6b35;   /* naranja reacción */
-  --clr-warn:      #ffd166;   /* amarillo advertencia */
+  --clr-accent:    #4a90e2;   /* azul amigable */
+  --clr-accent2:   #7ed321;   /* verde fresco */
+  --clr-accent3:   #f5a623;   /* amarillo-naranja suave */
+  --clr-warn:      #f5a623;   /* amarillo advertencia */
 
---clr-text:      #e8eaf0;
---clr-text-muted:#7b8399;
+--clr-text:      #333333;
+--clr-text-muted:#666666;
 
   /* Tipografía */
---font-display:  'Syne', sans-serif;
---font-body:     'DM Sans', sans-serif;
+--font-display:  'Fredoka One', cursive;
+--font-body:     'Nunito', sans-serif;
 
   /* Espaciado */
 --radius-sm:     6px;
@@ -30,8 +30,8 @@ Fuentes: Syne (display) + DM Sans (body)
 --radius-xl:     32px;
 
   /* Sombras */
---shadow-glow:   0 0 32px rgba(0, 229, 195, 0.15);
---shadow-card:   0 4px 32px rgba(0, 0, 0, 0.6);
+--shadow-glow:   0 0 32px rgba(74, 144, 226, 0.15);
+--shadow-card:   0 4px 32px rgba(0, 0, 0, 0.1);
 }
 
 /* Reset base */
@@ -54,8 +54,8 @@ content: '';
 position: fixed;
 inset: 0;
 background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79, 142, 255, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 229, 195, 0.05) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74, 144, 226, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(126, 211, 33, 0.1) 0%, transparent 60%);
 pointer-events: none;
 z-index: 0;
 }
@@ -176,8 +176,8 @@ to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 195, 0.2); }
-50%       { box-shadow: 0 0 40px rgba(0, 229, 195, 0.4); }
+0%, 100% { box-shadow: 0 0 20px rgba(74, 144, 226, 0.2); }
+50%       { box-shadow: 0 0 40px rgba(74, 144, 226, 0.4); }
 }
 
 .fade-up { animation: fadeUp 0.6s ease forwards; }

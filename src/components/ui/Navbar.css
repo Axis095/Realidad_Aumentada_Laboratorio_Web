@@ -3,7 +3,7 @@
   align-items: center;
   gap: 24px;
   padding: 14px 32px;
-  background: rgba(6, 8, 15, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid var(--clr-border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
