@@ -14,9 +14,10 @@ instruccion,
 prevPath,
 nextPath,
 children,
+pageStyle,
 }) {
 return (
-    <div className="modulo-page">
+    <div className="modulo-page" style={{ '--mod-color': color, ...pageStyle }}>
       {/* Header del módulo */}
     <header className="modulo-header" style={{ '--mod-color': color }}>
         <div className="modulo-header-inner">
