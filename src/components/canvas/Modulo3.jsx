@@ -1,9 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import ModuloBase from './ModuloBase'
+import QuizModal from './QuizModal'
 import './ModuloBase.css'
 
 export default function Modulo3() {
+  const [showQuiz, setShowQuiz] = useState(false)
+
 return (
+    <>
     <ModuloBase
     num="3"
     color="#fb923c"
@@ -32,11 +36,34 @@ return (
         <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.6', marginTop: '4px' }}>
             Moléculas: Triglicéridos · Hidróxido de sodio · Glicerol · Ácidos grasos
         </p>
+        <button
+          onClick={() => {
+            console.log('Botón clicado, abriendo quiz')
+            setShowQuiz(true)
+          }}
+          style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1.5rem',
+            background: '#fb923c',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+          onMouseOver={(e) => e.target.style.background = '#ea580c'}
+          onMouseOut={(e) => e.target.style.background = '#fb923c'}
+        >
+          Realizar Quiz de Comprensión
+        </button>
         </div>
     }
     instruccion="Activa la cámara para usar Realidad Aumentada. Apunta el teléfono al marcador impreso para ver las moléculas en tu espacio físico."
     prevPath="/modulo/2"
     nextPath={null}
     />
-)
+    {showQuiz && <QuizModal onClose={() => setShowQuiz(false)} />}
+    </>
+  )
 }
