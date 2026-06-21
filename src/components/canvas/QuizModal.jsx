@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 const questions = [
@@ -128,13 +128,78 @@ function QuizModal({ onClose }) {
   const [answers, setAnswers] = useState({})
   const [showResults, setShowResults] = useState(false)
 
+  const animeRef = useRef(null)
+  const modalRef = useRef(null)
+  const STORAGE_KEY = 'quiz-draft'
+
+  useEffect(() => {
+    let mounted = true
+    import('animejs').then(mod => {
+      let a = mod
+      try {
+        if (mod && mod.default) a = mod.default
+        if (a && typeof a === 'object' && typeof a.anime === 'function') a = a.anime
+      } catch (e) {}
+      if (!mounted || typeof a !== 'function') return
+      animeRef.current = a
+    }).catch(() => {})
+    return () => { mounted = false }
+  }, [])
+
   console.log('QuizModal renderizado')
 
-  const handleAnswer = (sectionIndex, questionIndex, optionIndex) => {
-    setAnswers(prev => ({
-      ...prev,
-      [`${sectionIndex}-${questionIndex}`]: optionIndex,
-    }))
+  // load draft from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY)
+      if (raw) setAnswers(JSON.parse(raw))
+    } catch (e) {}
+  }, [])
+
+  const handleAnswer = (sectionIndex, questionIndex, optionIndex, ev) => {
+    setAnswers(prev => {
+      const next = { ...prev, [`${sectionIndex}-${questionIndex}`]: optionIndex }
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch (e) {}
+      return next
+    })
+
+    const section = questions[sectionIndex]
+    const q = section.questions[questionIndex]
+    const isCorrect = optionIndex === q.correct
+    const run = animeRef.current
+    const btn = ev && ev.currentTarget
+
+    if (run && modalRef.current) {
+      try {
+        if (isCorrect) {
+          run.timeline({}).add({ targets: modalRef.current, scale: [1, 1.02, 1], duration: 420, easing: 'easeOutCubic' })
+          if (btn) run({ targets: btn, scale: [1, 1.08, 1], duration: 700, easing: 'easeOutElastic(1, .6)' })
+
+          // append burst to inner card for visibility
+          const card = modalRef.current.querySelector('div[style]') || modalRef.current
+          const burst = document.createElement('div')
+          burst.textContent = '✓'
+          Object.assign(burst.style, {
+            position: 'absolute',
+            left: '50%',
+            top: '12%',
+            transform: 'translateX(-50%) scale(0)',
+            background: '#10b981',
+            color: 'white',
+            padding: '8px 12px',
+            borderRadius: '999px',
+            fontSize: '1rem',
+            zIndex: 999999,
+            pointerEvents: 'none',
+          })
+          card.appendChild(burst)
+          run({ targets: burst, scale: [0, 1.05, 1], translateY: [-6, 0], opacity: [0,1], duration: 700, easing: 'easeOutElastic(1, .6)', complete: () => { try { burst.remove() } catch(e){} } })
+        } else {
+          run({ targets: modalRef.current, translateX: [0, -8, 8, -6, 6, 0], duration: 550, easing: 'easeInOutSine' })
+          if (btn) run({ targets: btn, scale: [1, 0.97, 1], duration: 260, easing: 'easeOutQuad' })
+        }
+      } catch (e) { /* ignore animation errors */ }
+    }
   }
 
   const calculateScore = () => {
@@ -151,8 +216,24 @@ function QuizModal({ onClose }) {
 
   const { correct, total } = calculateScore()
 
+  // clear draft when showing results
+  useEffect(() => {
+    if (showResults) {
+      try { sessionStorage.removeItem(STORAGE_KEY) } catch (e) {}
+    }
+  }, [showResults])
+
+  const handleClose = () => {
+    const hasAnswers = Object.keys(answers).length > 0 && !showResults
+    if (hasAnswers) {
+      const ok = window.confirm('Tienes respuestas sin enviar. Se guardarán temporalmente y podrás continuar después. ¿Cerrar?')
+      if (!ok) return
+    }
+    onClose()
+  }
+
   return createPortal(
-    <div style={{
+    <div ref={modalRef} style={{
       position: 'fixed',
       inset: 0,
       background: 'rgba(0,0,0,0.8)',
@@ -162,6 +243,7 @@ function QuizModal({ onClose }) {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2rem',
+      transformOrigin: 'center top'
     }}>
       <div style={{
         background: '#fff',
@@ -182,7 +264,7 @@ function QuizModal({ onClose }) {
           alignItems: 'center',
         }}>
           <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>Quiz de Saponificación</h2>
-          <button onClick={onClose} style={{
+          <button onClick={handleClose} style={{
             background: 'none',
             border: 'none',
             fontSize: '1.5rem',
@@ -215,7 +297,7 @@ function QuizModal({ onClose }) {
                       return (
                         <button
                           key={oIdx}
-                          onClick={() => handleAnswer(sIdx, qIdx, oIdx)}
+                          onClick={(e) => handleAnswer(sIdx, qIdx, oIdx, e)}
                           disabled={isAnswered}
                           style={{
                             padding: '0.75rem',
@@ -237,9 +319,9 @@ function QuizModal({ onClose }) {
               ))}
             </div>
           ))}
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
             <button
-              onClick={() => setShowResults(true)}
+              onClick={() => { setShowResults(true); try { sessionStorage.removeItem(STORAGE_KEY) } catch(e){} }}
               style={{
                 padding: '1rem 2rem',
                 background: '#fb923c',

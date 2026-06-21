@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import ModuloBase from './ModuloBase'
 import QuizModal from './QuizModal'
 import './ModuloBase.css'
+import { animate } from 'animejs'
 
 export default function Modulo3() {
   const [showQuiz, setShowQuiz] = useState(false)
+  const quizBtnRef = useRef(null)
 
 return (
     <>
@@ -37,9 +39,21 @@ return (
             Moléculas: Triglicéridos · Hidróxido de sodio · Glicerol · Ácidos grasos
         </p>
         <button
+          ref={quizBtnRef}
           onClick={() => {
-            console.log('Botón clicado, abriendo quiz')
-            setShowQuiz(true)
+            if (quizBtnRef.current) {
+              animate(
+                quizBtnRef.current,
+                {
+                  scale: [1, 1.06, 1],
+                  duration: 500,
+                  easing: 'easeInOutSine',
+                  complete: () => setShowQuiz(true),
+                }
+              )
+            } else {
+              setShowQuiz(true)
+            }
           }}
           style={{
             marginTop: '1rem',
