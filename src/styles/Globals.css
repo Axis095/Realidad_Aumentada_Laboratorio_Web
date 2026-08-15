@@ -50,6 +50,12 @@ Fuentes: Fredoka One (display) + Nunito (body)
 
 html { font-size: 16px; scroll-behavior: smooth; }
 
+html, body, #root { width: 100%; max-width: 100%; }
+
+img, svg, video { max-width: 100%; }
+
+button, a, p, h1, h2, h3, h4, span { overflow-wrap: anywhere; }
+
 body {
 font-family: var(--font-body);
 background-color: var(--clr-bg);
@@ -85,6 +91,8 @@ z-index: 1;
 flex: 1;
 display: flex;
 flex-direction: column;
+min-width: 0;
+max-width: 100%;
 }
 
 /* Cards de vidrio */
