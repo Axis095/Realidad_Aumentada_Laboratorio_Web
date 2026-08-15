@@ -169,7 +169,7 @@ export default function Modulo1() {
         <header className="m1-header">
           <div className="m1-header-badge">
             <span className="m1-dot-badge" />
-            Módulo 01
+            Módulo 1
           </div>
           <h1 className="m1-title">Reconocimiento de material de laboratorio</h1>
           <p className="m1-subtitle">Identifica los instrumentos necesarios para la reacción de saponificación.</p>
