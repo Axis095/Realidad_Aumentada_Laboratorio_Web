@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { animate } from 'animejs'
 
 const questions = [
   {
@@ -128,25 +129,8 @@ function QuizModal({ onClose }) {
   const [answers, setAnswers] = useState({})
   const [showResults, setShowResults] = useState(false)
 
-  const animeRef = useRef(null)
   const modalRef = useRef(null)
   const STORAGE_KEY = 'quiz-draft'
-
-  useEffect(() => {
-    let mounted = true
-    import('animejs').then(mod => {
-      let a = mod
-      try {
-        if (mod && mod.default) a = mod.default
-        if (a && typeof a === 'object' && typeof a.anime === 'function') a = a.anime
-      } catch (e) {}
-      if (!mounted || typeof a !== 'function') return
-      animeRef.current = a
-    }).catch(() => {})
-    return () => { mounted = false }
-  }, [])
-
-  console.log('QuizModal renderizado')
 
   // load draft from sessionStorage on mount
   useEffect(() => {
@@ -166,14 +150,14 @@ function QuizModal({ onClose }) {
     const section = questions[sectionIndex]
     const q = section.questions[questionIndex]
     const isCorrect = optionIndex === q.correct
-    const run = animeRef.current
     const btn = ev && ev.currentTarget
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    if (run && modalRef.current) {
+    if (!reduceMotion && modalRef.current) {
       try {
         if (isCorrect) {
-          run.timeline({}).add({ targets: modalRef.current, scale: [1, 1.02, 1], duration: 420, easing: 'easeOutCubic' })
-          if (btn) run({ targets: btn, scale: [1, 1.08, 1], duration: 700, easing: 'easeOutElastic(1, .6)' })
+          animate(modalRef.current, { scale: [1, 1.02, 1], duration: 420, ease: 'outCubic' })
+          if (btn) animate(btn, { scale: [1, 1.08, 1], duration: 700, ease: 'outElastic(1, .6)' })
 
           // append burst to inner card for visibility
           const card = modalRef.current.querySelector('div[style]') || modalRef.current
@@ -184,7 +168,7 @@ function QuizModal({ onClose }) {
             left: '50%',
             top: '12%',
             transform: 'translateX(-50%) scale(0)',
-            background: '#10b981',
+            background: 'var(--clr-green)',
             color: 'white',
             padding: '8px 12px',
             borderRadius: '999px',
@@ -193,10 +177,10 @@ function QuizModal({ onClose }) {
             pointerEvents: 'none',
           })
           card.appendChild(burst)
-          run({ targets: burst, scale: [0, 1.05, 1], translateY: [-6, 0], opacity: [0,1], duration: 700, easing: 'easeOutElastic(1, .6)', complete: () => { try { burst.remove() } catch(e){} } })
+          animate(burst, { scale: [0, 1.05, 1], translateY: [-6, 0], opacity: [0,1], duration: 700, ease: 'outElastic(1, .6)', onComplete: () => burst.remove() })
         } else {
-          run({ targets: modalRef.current, translateX: [0, -8, 8, -6, 6, 0], duration: 550, easing: 'easeInOutSine' })
-          if (btn) run({ targets: btn, scale: [1, 0.97, 1], duration: 260, easing: 'easeOutQuad' })
+          animate(modalRef.current, { translateX: [0, -8, 8, -6, 6, 0], duration: 550, ease: 'inOutSine' })
+          if (btn) animate(btn, { scale: [1, 0.97, 1], duration: 260, ease: 'outQuad' })
         }
       } catch (e) { /* ignore animation errors */ }
     }
@@ -233,16 +217,16 @@ function QuizModal({ onClose }) {
   }
 
   return createPortal(
-    <div ref={modalRef} style={{
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="quiz-title" style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0,0,0,0.8)',
+      background: 'rgba(24,59,58,0.72)',
       backdropFilter: 'blur(10px)',
       zIndex: 99999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem',
+      padding: 'clamp(0.75rem, 4vw, 2rem)',
       transformOrigin: 'center top'
     }}>
       <div style={{
@@ -254,17 +238,17 @@ function QuizModal({ onClose }) {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.3)',
+        boxShadow: '0 32px 80px rgba(24,59,58,0.26)',
       }}>
         <div style={{
           padding: '1.5rem',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: '1px solid var(--clr-border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>Quiz de Saponificación</h2>
-          <button onClick={handleClose} style={{
+          <h2 id="quiz-title" style={{ margin: 0, fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', color: 'var(--clr-text)', fontFamily: 'var(--font-display)' }}>Quiz de Saponificación</h2>
+          <button onClick={handleClose} aria-label="Cerrar cuestionario" style={{
             background: 'none',
             border: 'none',
             fontSize: '1.5rem',
@@ -279,10 +263,10 @@ function QuizModal({ onClose }) {
         }}>
           {questions.map((section, sIdx) => (
             <div key={sIdx} style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#fb923c', fontSize: '1.2rem', marginBottom: '1rem' }}>{section.section}</h3>
+              <h3 style={{ color: 'var(--clr-orange-dark)', fontSize: '1.2rem', marginBottom: '1rem' }}>{section.section}</h3>
               {section.questions.map((q, qIdx) => (
                 <div key={qIdx} style={{ marginBottom: '1.5rem' }}>
-                  <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#1e293b' }}>{q.question}</p>
+                  <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--clr-text)' }}>{q.question}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {q.options.map((option, oIdx) => {
                       const isSelected = answers[`${sIdx}-${qIdx}`] === oIdx
@@ -290,9 +274,9 @@ function QuizModal({ onClose }) {
                       const isAnswered = answers[`${sIdx}-${qIdx}`] !== undefined
                       let bgColor = 'transparent'
                       if (isAnswered) {
-                        if (isSelected && isCorrect) bgColor = '#d1fae5'
-                        else if (isSelected && !isCorrect) bgColor = '#fee2e2'
-                        else if (isCorrect) bgColor = '#d1fae5'
+                        if (isSelected && isCorrect) bgColor = 'var(--clr-green-soft)'
+                        else if (isSelected && !isCorrect) bgColor = '#fff0ed'
+                        else if (isCorrect) bgColor = 'var(--clr-green-soft)'
                       }
                       return (
                         <button
@@ -301,10 +285,10 @@ function QuizModal({ onClose }) {
                           disabled={isAnswered}
                           style={{
                             padding: '0.75rem',
-                            border: '1px solid #d1d5db',
+                            border: '1px solid var(--clr-border)',
                             borderRadius: '8px',
                             background: bgColor,
-                            color: '#374151',
+                            color: 'var(--clr-text-muted)',
                             cursor: isAnswered ? 'default' : 'pointer',
                             textAlign: 'left',
                             transition: 'background 0.2s',
@@ -324,7 +308,7 @@ function QuizModal({ onClose }) {
               onClick={() => { setShowResults(true); try { sessionStorage.removeItem(STORAGE_KEY) } catch(e){} }}
               style={{
                 padding: '1rem 2rem',
-                background: '#fb923c',
+                background: 'var(--clr-orange)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -339,12 +323,12 @@ function QuizModal({ onClose }) {
             <div style={{
               marginTop: '2rem',
               padding: '1rem',
-              background: '#f3f4f6',
+              background: 'var(--clr-green-soft)',
               borderRadius: '8px',
               textAlign: 'center',
             }}>
-              <h3 style={{ color: '#1e293b' }}>Resultados</h3>
-              <p style={{ fontSize: '1.2rem', color: '#374151' }}>
+              <h3 style={{ color: 'var(--clr-text)' }}>Resultados</h3>
+              <p style={{ fontSize: '1.2rem', color: 'var(--clr-text-muted)' }}>
                 Acertaste {correct} de {total} preguntas ({Math.round((correct / total) * 100)}%)
               </p>
             </div>

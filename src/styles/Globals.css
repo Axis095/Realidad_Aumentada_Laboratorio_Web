@@ -5,33 +5,44 @@ Fuentes: Fredoka One (display) + Nunito (body)
    ============================================================ */
 
 :root {
-  /* Paleta principal */
---clr-bg:        #e6f3ff;
---clr-bg-card:   #ffffff;
---clr-bg-glass:  rgba(255, 255, 255, 0.95);
---clr-border:    #cccccc;
+  /* Sistema cromático educativo */
+  --clr-green: #218c68;
+  --clr-green-dark: #17664d;
+  --clr-green-soft: #ddf4e9;
+  --clr-blue: #3974d8;
+  --clr-blue-dark: #2858aa;
+  --clr-blue-soft: #e8f1ff;
+  --clr-orange: #e96f32;
+  --clr-orange-dark: #b84d1e;
+  --clr-orange-soft: #fff0e5;
 
-  --clr-accent:    #4a90e2;   /* azul amigable */
-  --clr-accent2:   #7ed321;   /* verde fresco */
-  --clr-accent3:   #f5a623;   /* amarillo-naranja suave */
-  --clr-warn:      #f5a623;   /* amarillo advertencia */
+  --clr-bg: #f6faf7;
+  --clr-bg-card: #ffffff;
+  --clr-bg-glass: rgba(255, 255, 255, 0.9);
+  --clr-border: #d9e7e2;
+  --clr-text: #183b3a;
+  --clr-text-muted: #526b68;
 
---clr-text:      #333333;
---clr-text-muted:#666666;
+  /* Alias heredados para componentes existentes */
+  --clr-accent: var(--clr-green);
+  --clr-accent2: var(--clr-blue);
+  --clr-accent3: var(--clr-orange);
+  --clr-warn: var(--clr-orange);
 
   /* Tipografía */
 --font-display:  'Fredoka One', cursive;
 --font-body:     'Nunito', sans-serif;
 
   /* Espaciado */
---radius-sm:     6px;
---radius-md:     12px;
---radius-lg:     20px;
---radius-xl:     32px;
+--radius-sm:     8px;
+--radius-md:     14px;
+--radius-lg:     22px;
+--radius-xl:     999px;
 
   /* Sombras */
---shadow-glow:   0 0 32px rgba(74, 144, 226, 0.15);
---shadow-card:   0 4px 32px rgba(0, 0, 0, 0.1);
+--shadow-glow:   0 0 32px rgba(33, 140, 104, 0.15);
+--shadow-card:   0 14px 40px rgba(24, 59, 58, 0.1);
+--shadow-soft:   0 8px 24px rgba(24, 59, 58, 0.07);
 }
 
 /* Reset base */
@@ -54,8 +65,9 @@ content: '';
 position: fixed;
 inset: 0;
 background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74, 144, 226, 0.1) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(126, 211, 33, 0.1) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 60% at 15% 5%, rgba(57, 116, 216, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 45% at 85% 85%, rgba(33, 140, 104, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 35% at 90% 10%, rgba(233, 111, 50, 0.06) 0%, transparent 65%);
 pointer-events: none;
 z-index: 0;
 }
@@ -105,7 +117,7 @@ letter-spacing: 0.02em;
 
 .btn-primary:hover {
 transform: translateY(-2px);
-box-shadow: 0 8px 24px rgba(0, 229, 195, 0.35);
+box-shadow: 0 10px 26px rgba(33, 140, 104, 0.24);
 }
 
 .btn-primary:active { transform: translateY(0); }
@@ -130,7 +142,7 @@ transition: border-color 0.2s ease, background 0.2s ease;
 
 .btn-secondary:hover {
 border-color: var(--clr-accent);
-background: rgba(0, 229, 195, 0.06);
+background: var(--clr-green-soft);
 }
 
 /* Badge de módulo */
@@ -156,9 +168,9 @@ flex-direction: column;
 align-items: center;
 justify-content: center;
 gap: 16px;
-border: 1px dashed rgba(0, 229, 195, 0.25);
+border: 1px dashed rgba(33, 140, 104, 0.32);
 border-radius: var(--radius-lg);
-background: rgba(0, 229, 195, 0.02);
+background: rgba(221, 244, 233, 0.45);
 color: var(--clr-text-muted);
 font-family: var(--font-body);
 font-size: 0.9rem;
@@ -176,8 +188,8 @@ to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-0%, 100% { box-shadow: 0 0 20px rgba(74, 144, 226, 0.2); }
-50%       { box-shadow: 0 0 40px rgba(74, 144, 226, 0.4); }
+0%, 100% { box-shadow: 0 0 18px rgba(33, 140, 104, 0.18); }
+50%       { box-shadow: 0 0 30px rgba(33, 140, 104, 0.34); }
 }
 
 .fade-up { animation: fadeUp 0.6s ease forwards; }
@@ -197,3 +209,17 @@ to   { opacity: 1; transform: translateY(0); }
 ::-webkit-scrollbar-track { background: var(--clr-bg); }
 ::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+:focus-visible {
+  outline: 3px solid rgba(57, 116, 216, 0.34);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

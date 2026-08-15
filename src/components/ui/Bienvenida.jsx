@@ -44,7 +44,7 @@ export default function Bienvenida() {
       <section className="modules-grid fade-up-delay-4">
         <ModuleCard
           num="01"
-          color="#4f8eff"
+          color="#3974d8"
           icon="🧪"
           title="Material de Laboratorio"
           desc="Identifica y manipula los instrumentos necesarios para la reacción de saponificación en 3D interactivo."
@@ -53,7 +53,7 @@ export default function Bienvenida() {
         />
         <ModuleCard
           num="02"
-          color="#00e5c3"
+          color="#218c68"
           icon="🔬"
           title="Reacción de Saponificación"
           desc="Observa paso a paso el proceso de saponificación: mezcla de aceite usado y NaOH hasta la formación del jabón."
@@ -62,7 +62,7 @@ export default function Bienvenida() {
         />
         <ModuleCard
           num="03"
-          color="#ff6b35"
+          color="#e96f32"
           icon="⚛"
           title="Nivel Molecular"
           desc="Visualiza la reacción a nivel molecular con realidad aumentada. Identifica triglicéridos, glicerol y jabón."

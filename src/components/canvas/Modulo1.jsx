@@ -1,7 +1,8 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Environment, ContactShadows, Html } from '@react-three/drei'
+import { OrbitControls, useGLTF, Environment, ContactShadows, Html, Clone } from '@react-three/drei'
+import { animate, stagger } from 'animejs'
 import './ModuloBase.css'
 import './Modulo1.css'
 
@@ -13,16 +14,16 @@ const modelOptions = [
   { id: 'agitador', label: 'Agitador de Vidrio',   emoji: '🔬', url: '/models/agitador_vidrio5M.glb', scale: 0.05, position: [0,-1,0], info: { descripcion: 'Varilla de vidrio para mezclar soluciones manualmente.',                                               uso: 'Ayuda a disolver sólidos en líquidos y homogenizar mezclas.' } },
   { id: 'espatula', label: 'Espátula',              emoji: '🔧', url: '/models/blade5M.glb',           scale: 0.1,  position: [0,-1,0], info: { descripcion: 'Herramienta metálica para transferir sólidos en pequeñas cantidades.',                                  uso: 'Útil para medir y transferir polvos o cristales sin derramar.' } },
   { id: 'guantes',  label: 'Guantes',               emoji: '🧤', url: '/models/blue_nitrile5M.glb',    scale: 0.5,  position: [0,-1,0], info: { descripcion: 'Guantes resistentes a químicos para proteger las manos.',                                               uso: 'Protegen contra sustancias corrosivas y mantienen la higiene en el laboratorio.' } },
-  { id: 'parrilla', label: 'Parrilla Eléctrica',   emoji: '🔥', url: '/models/termoLab5M.glb',        scale: 0.3,  position: [0,-1,0], info: { descripcion: 'Plataforma calefactora para calentar recipientes de laboratorio.',                                       uso: 'Se utiliza para calentar mezclas a temperaturas controladas.' } },
-  { id: 'molde',    label: 'Molde para Jabones',   emoji: '🟫', url: '/models/mintOrganizer5M.glb',   scale: 0.07, position: [0,-1,0], info: { descripcion: 'Recipientes para dar forma a los jabones durante la solidificación.',                                    uso: 'Permiten crear jabones con formas específicas y facilitar su extracción.' } },
-  { id: 'gafas',    label: 'Lentes de Cristal de Protección',   emoji: '🟫', url: '/models/crystal_Safety_Google5M.glb',   scale: 0.2, position: [0,-1,0], info: { descripcion: 'Este equipamiento recibe el nombre de gafas de seguridad o gafas de protección.',                                    uso: 'Proteger los ojos del trabajador de forma efectiva, garantizando su seguridad.' } },
+  { id: 'parrilla', label: 'Parrilla Eléctrica',   emoji: '🔥', url: '/models/PARRILLA ELECTRICA LOW POLY.glb', scale: 0.3, position: [0,-1,0], info: { descripcion: 'Plataforma calefactora para calentar recipientes de laboratorio.', uso: 'Se utiliza para calentar mezclas a temperaturas controladas.' } },
+  { id: 'molde',    label: 'Molde para Jabones',   emoji: '🧼', url: '/models/mintOrganizer5M.glb',   scale: 0.07, position: [0,-1,0], info: { descripcion: 'Recipientes para dar forma a los jabones durante la solidificación.',                                    uso: 'Permiten crear jabones con formas específicas y facilitar su extracción.' } },
+  { id: 'gafas',    label: 'Lentes de Cristal de Protección',   emoji: '🕶️', url: '/models/crystal_Safety_Google5M.glb',   scale: 0.2, position: [0,-1,0], info: { descripcion: 'Este equipamiento recibe el nombre de gafas de seguridad o gafas de protección.',                                    uso: 'Proteger los ojos del trabajador de forma efectiva, garantizando su seguridad.' } },
 ]
 
 function Loader() {
   return (
     <Html center>
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'#00e5c3', fontFamily:'DM Sans,sans-serif', fontSize:'0.82rem' }}>
-        <div style={{ width:32, height:32, border:'3px solid rgba(0,229,195,0.2)', borderTop:'3px solid #00e5c3', borderRadius:'50%', animation:'m1spin 0.9s linear infinite' }} />
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'var(--clr-blue)', fontFamily:'var(--font-body)', fontSize:'0.82rem' }}>
+        <div style={{ width:32, height:32, border:'3px solid rgba(57,116,216,.18)', borderTop:'3px solid var(--clr-blue)', borderRadius:'50%', animation:'m1spin 0.9s linear infinite' }} />
         Cargando...
       </div>
     </Html>
@@ -31,235 +32,116 @@ function Loader() {
 
 function GLTFModel({ url, scale, position }) {
   const { scene } = useGLTF(url)
-
-  useEffect(() => {
-    if (!scene) return
-    try {
-      scene.traverse((child) => {
-        if (!child.isMesh || !child.material) return
-        const mat = child.material
-        const mapKeys = ['map','aoMap','emissiveMap','specularMap','metalnessMap','roughnessMap','alphaMap','lightMap']
-        mapKeys.forEach(k => {
-          const tx = mat[k]
-          if (tx && tx.isTexture) {
-            try { tx.flipY = false } catch (e) {}
-            try { tx.premultiplyAlpha = false } catch (e) {}
-            try { tx.needsUpdate = true } catch (e) {}
-          }
-        })
-      })
-    } catch (e) { /* ignore traversal errors */ }
-  }, [scene])
-
-  return <primitive object={scene} scale={scale} position={position} />
-}
-
-function DetailModal({ model, onClose, mainCanvasRef, setGlLost }) {
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <span style={{ fontSize:'1.6rem' }}>{model.emoji}</span>
-            <div>
-              <div style={{ fontFamily:'Syne,sans-serif', fontSize:'0.67rem', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:'#00e5c3', marginBottom:2 }}>Material de laboratorio</div>
-              <h2 style={{ margin:0, fontFamily:'Syne,sans-serif', fontSize:'1.15rem', fontWeight:700, color:'#e8eaf0' }}>{model.label}</h2>
-            </div>
-          </div>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          <div className="modal-model-view">
-              <Canvas
-                camera={{ position:[0,2,6], fov:45 }}
-                gl={{ antialias: false, powerPreference: 'low-power', preserveDrawingBuffer: false }}
-                onCreated={(state) => {
-                  // conservative pixel ratio to save VRAM on low-end devices
-                  try { state.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)) } catch (e) {}
-                  const canvas = state.gl && state.gl.domElement
-                  if (!canvas) return
-                  if (mainCanvasRef && mainCanvasRef.current !== undefined) mainCanvasRef.current = canvas
-
-                  const onLost = (ev) => { ev.preventDefault(); console.warn('WebGL context lost'); if (typeof setGlLost === 'function') setGlLost(true) }
-                  const onRestored = () => { console.info('WebGL context restored'); if (typeof setGlLost === 'function') setGlLost(false) }
-
-                  canvas.addEventListener('webglcontextlost', onLost, false)
-                  canvas.addEventListener('webglcontextrestored', onRestored, false)
-
-                  // store handlers so we can remove later
-                  canvas._onWebglContextLost = onLost
-                  canvas._onWebglContextRestored = onRestored
-                }}
-              >
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5,5,5]} intensity={1.2} />
-              <pointLight position={[-5,3,-5]} intensity={0.4} color="#4f8eff" />
-              <Suspense fallback={<Loader />}>
-                <GLTFModel url={model.url} scale={model.scale * 1.5} position={model.position} />
-                <Environment preset="studio" />
-                <ContactShadows position={[0,-1.5,0]} opacity={0.5} scale={6} blur={2.5} />
-              </Suspense>
-              <OrbitControls enableZoom enablePan={false} autoRotate autoRotateSpeed={0.8} />
-            </Canvas>
-          </div>
-          <div className="modal-info">
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontSize:'0.67rem', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:'#00e5c3' }}>Descripción</div>
-              <p style={{ margin:0, fontSize:'0.86rem', color:'#7b8399', lineHeight:1.75 }}>{model.info.descripcion}</p>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontSize:'0.67rem', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:'#4f8eff' }}>Uso en laboratorio</div>
-              <p style={{ margin:0, fontSize:'0.86rem', color:'#7b8399', lineHeight:1.75 }}>{model.info.uso}</p>
-            </div>
-            <div style={{ background:'rgba(0,229,195,0.05)', border:'1px solid rgba(0,229,195,0.16)', borderRadius:10, padding:12, fontSize:'0.76rem', color:'#7b8399', lineHeight:1.7, marginTop:'auto' }}>
-              💡 Arrastra para rotar · 🖱️ Rueda para zoom
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  // Keep useGLTF's cached scene as an immutable template. A deep clone gives
+  // every mount its own geometries and materials, which R3F can safely dispose.
+  return <Clone object={scene} deep scale={scale} position={position} />
 }
 
 export default function Modulo1() {
   const [idx, setIdx]     = useState(0)
   const [modal, setModal] = useState(false)
-  const [glLost, setGlLost] = useState(false)
   const model             = modelOptions[idx]
   const prev = () => setIdx(i => (i - 1 + modelOptions.length) % modelOptions.length)
   const next = () => setIdx(i => (i + 1) % modelOptions.length)
 
-  const animeRef = useRef(null)
-  const mainCanvasRef = useRef(null)
-  const modalCanvasRef = useRef(null)
-
-  // Preload only current and adjacent models to avoid loading all models into GPU memory
-  useEffect(() => {
-    try {
-      useGLTF.preload(model.url)
-      const next = modelOptions[(idx + 1) % modelOptions.length]
-      const prev = modelOptions[(idx - 1 + modelOptions.length) % modelOptions.length]
-      if (next) useGLTF.preload(next.url)
-      if (prev) useGLTF.preload(prev.url)
-    } catch (e) { /* ignore preload issues */ }
-  }, [idx, model.url])
+  const animationsRef = useRef([])
+  const viewerRef = useRef(null)
+  const labelRef = useRef(null)
+  const counterRef = useRef(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    let mounted = true
-    // add class so CSS hides header only when JS will animate it
-    try { document.documentElement.classList.add('js-animate') } catch (e) {}
-    import('animejs').then(mod => {
-      // Normalize different export shapes: module, default, { anime }, etc.
-      let a = mod
-      try {
-        if (mod && mod.default) a = mod.default
-        if (a && typeof a === 'object' && typeof a.anime === 'function') a = a.anime
-      } catch (e) { /* ignore */ }
+    document.documentElement.classList.add('js-animate')
+    animationsRef.current = [
+      animate(['.m1-header-badge', '.m1-title', '.m1-subtitle'], {
+        translateY: [18, 0],
+        opacity: [0, 1],
+        delay: stagger(110),
+        ease: 'outCubic',
+        duration: 520,
+      }),
+      animate('.m1-dot-badge', {
+        scale: [1, 1.08],
+        alternate: true,
+        duration: 1500,
+        ease: 'inOutSine',
+        loop: true,
+      }),
+    ]
 
-      if (!mounted || typeof a !== 'function') {
-        try { document.documentElement.classList.remove('js-animate') } catch (e) {}
-        return
-      }
-
-      animeRef.current = a
-      const run = animeRef.current
-      const headerTargets = ['.m1-header-badge', '.m1-title', '.m1-subtitle']
-
-      // header animation: use timeline when available, otherwise stagger via delay callback
-      try {
-        if (typeof run.timeline === 'function') {
-          const stagger = (typeof run.stagger === 'function') ? run.stagger(110) : 110
-          run.timeline({}).add({
-            targets: headerTargets,
-            translateY: [18, 0],
-            opacity: [0, 1],
-            delay: stagger,
-            easing: 'easeOutCubic',
-            duration: 520,
-          })
-        } else {
-          run({
-            targets: headerTargets,
-            translateY: [18, 0],
-            opacity: [0, 1],
-            delay: function(el, i) { return i * 110 },
-            easing: 'easeOutCubic',
-            duration: 520,
-          })
-        }
-      } catch (err) {
-        console.warn('animejs header animation failed', err)
-      }
-
-      // badge pulse
-      try {
-        run({
-          targets: '.m1-dot-badge',
-          scale: [1, 1.08],
-          direction: 'alternate',
-          duration: 1500,
-          easing: 'easeInOutSine',
-          loop: true,
-        })
-      } catch (err) {
-        console.warn('animejs pulse failed', err)
-      }
-    }).catch(err => {
-      console.warn('animejs import failed', err)
-      try { document.documentElement.classList.remove('js-animate') } catch (e) {}
-    })
-
-    return () => { mounted = false; try { document.documentElement.classList.remove('js-animate') } catch (e) {} }
-  }, [])
-
-  // Remove any canvas event listeners on unmount to avoid leaking contexts
-  useEffect(() => {
     return () => {
-      try {
-        ;[mainCanvasRef.current, modalCanvasRef.current].forEach(canvas => {
-          if (!canvas) return
-          if (canvas._onWebglContextLost) canvas.removeEventListener('webglcontextlost', canvas._onWebglContextLost)
-          if (canvas._onWebglContextRestored) canvas.removeEventListener('webglcontextrestored', canvas._onWebglContextRestored)
-          try { delete canvas._onWebglContextLost } catch (e) {}
-          try { delete canvas._onWebglContextRestored } catch (e) {}
-        })
-      } catch (e) { /* ignore */ }
+      animationsRef.current.forEach(animation => animation.revert())
+      animationsRef.current = []
+      document.documentElement.classList.remove('js-animate')
     }
   }, [])
 
+  useEffect(() => {
+    if (!modal) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setModal(false)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [modal])
+
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const activeTab = viewerRef.current?.querySelector('.m1-tab.active')
+    const targets = [labelRef.current, counterRef.current, activeTab].filter(Boolean)
+    animate(targets, {
+      opacity: [0.45, 1],
+      translateY: [6, 0],
+      duration: 360,
+      delay: stagger(45),
+      ease: 'outCubic',
+      composition: 'replace',
+    })
+  }, [idx])
+
+  useEffect(() => {
+    if (!modal || !viewerRef.current) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    animate(viewerRef.current, {
+      opacity: [0, 1],
+      scale: [0.985, 1],
+      duration: 280,
+      ease: 'outCubic',
+      composition: 'replace',
+    })
+  }, [modal])
+
   const handlePointerDown = (e) => {
     const el = e.currentTarget
-    const a = animeRef.current
-    if (!a) return
-    a.remove(el)
-    a({ targets: el, scale: 0.96, duration: 120, easing: 'easeOutQuad' })
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    animate(el, { scale: 0.96, duration: 120, ease: 'outQuad', composition: 'replace' })
   }
 
   const handlePointerUp = (e) => {
     const el = e.currentTarget
-    const a = animeRef.current
-    if (!a) return
-    a.remove(el)
-    a({ targets: el, scale: 1, duration: 280, elasticity: 600, easing: 'easeOutElastic' })
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    animate(el, { scale: 1, duration: 280, ease: 'outElastic(1, .6)', composition: 'replace' })
   }
 
   return (
     <>
-      {glLost && (
-        <div style={{ position:'fixed', inset:0, zIndex:99999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', color:'#fff', padding:20 }}>
-          <div style={{ maxWidth:540, textAlign:'center', background:'rgba(0,0,0,0.6)', padding:20, borderRadius:12 }}>
-            <h3 style={{ marginTop:0 }}>Se perdió el contexto WebGL</h3>
-            <p>La escena 3D tuvo un problema con el contexto gráfico. Puedes recargar la página para intentar restaurarlo.</p>
-            <button style={{ marginTop:12, padding:'8px 14px', borderRadius:8, border:'none', background:'#00e5c3', color:'#062023' }} onClick={() => window.location.reload()}>Recargar</button>
-          </div>
-        </div>
-      )}
+      {modal && <div className="m1-detail-backdrop" onClick={() => setModal(false)} />}
       <div className="m1-page" style={{
-        '--mod-page-bg': '#f3f4f6',
-        '--mod-page-text': '#0f172a',
+        '--mod-color': '#3974d8',
+        '--mod-page-bg': '#f3f7ff',
+        '--mod-page-text': '#183b3a',
+        '--mod-info-text': '#526b68',
+        '--mod-info-bg': 'rgba(255,255,255,.9)',
+        '--mod-info-border': 'rgba(57,116,216,.14)',
+        '--mod-surface': '#ffffff',
+        '--mod-header-start': 'rgba(57,116,216,.11)',
       }}>
 
         <header className="m1-header">
@@ -274,12 +156,12 @@ export default function Modulo1() {
         <div className="m1-layout">
           <aside className="m1-sidebar">
             <div className="m1-sidebar-block">
-              <div className="m1-sidebar-lbl" style={{ color: '#4f8eff' }}>Objetivo</div>
+              <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-blue)' }}>Objetivo</div>
               <p className="m1-sidebar-p">Identificar el material de laboratorio necesario para la elaboración de jabones ecológicos mediante saponificación.</p>
             </div>
 
             <div className="m1-sidebar-block">
-              <div className="m1-sidebar-lbl" style={{ color: '#00e5c3' }}>Instrumentos</div>
+              <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-green)' }}>Instrumentos</div>
               <ul className="m1-list">
                 {modelOptions.map((m, i) => (
                   <li
@@ -297,12 +179,18 @@ export default function Modulo1() {
             </div>
 
             <div className="m1-instruccion-box">
-              <div className="m1-sidebar-lbl" style={{ color: '#ff6b35' }}>⚡ Instrucción</div>
-              <p className="m1-sidebar-p">Selecciona un instrumento de la lista o usa las flechas ‹ ›. Haz clic en <strong style={{ color:'#e8eaf0' }}>'Ver detalles'</strong> para explorarlo en pantalla completa.</p>
+              <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-orange)' }}>⚡ Instrucción</div>
+              <p className="m1-sidebar-p">Selecciona un instrumento de la lista o usa las flechas ‹ ›. Haz clic en <strong>'Ver detalles'</strong> para explorarlo en pantalla completa.</p>
             </div>
           </aside>
 
-          <div className="m1-viewer">
+          <div ref={viewerRef} className={`m1-viewer ${modal ? 'is-detail-open' : ''}`} role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={modal ? `Detalles de ${model.label}` : undefined}>
+            {modal && (
+              <div className="m1-detail-header">
+                <div><small>Material de laboratorio</small><h2>{model.emoji} {model.label}</h2></div>
+                <button className="modal-close" onClick={() => setModal(false)} aria-label="Cerrar detalles">✕</button>
+              </div>
+            )}
             <div className="m1-tabs">
               {modelOptions.map((m, i) => (
                 <button
@@ -319,10 +207,14 @@ export default function Modulo1() {
             </div>
 
             <div className="m1-canvas-box">
-              <Canvas camera={{ position:[0,2,6], fov:45 }}>
+              <Canvas
+                camera={{ position:[0,2,6], fov:45 }}
+                dpr={[1, 1.5]}
+                gl={{ antialias: false, powerPreference: 'low-power' }}
+              >
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5,5,5]} intensity={1} />
-                <pointLight position={[-4,2,-4]} intensity={0.3} color="#4f8eff" />
+                <pointLight position={[-4,2,-4]} intensity={0.3} color="#3974d8" />
                 <Suspense fallback={<Loader />}>
                   <GLTFModel url={model.url} scale={model.scale} position={model.position} />
                   <Environment preset="studio" />
@@ -334,31 +226,34 @@ export default function Modulo1() {
               <button className="m1-arrow m1-arrow-l" onClick={prev} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>‹</button>
               <button className="m1-arrow m1-arrow-r" onClick={next} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>›</button>
 
-              <div className="m1-label-float">{model.emoji} {model.label}</div>
+              <div ref={labelRef} className="m1-label-float">{model.emoji} {model.label}</div>
             </div>
 
             <div className="m1-viewer-footer">
-              <span className="m1-counter">{idx + 1} / {modelOptions.length}</span>
+              <span ref={counterRef} className="m1-counter">{idx + 1} / {modelOptions.length}</span>
               <button className="m1-detail-btn" onClick={() => setModal(true)} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>Ver detalles →</button>
             </div>
+            {modal && (
+              <aside className="m1-detail-info">
+                <div><strong>Descripción</strong><p>{model.info.descripcion}</p></div>
+                <div><strong>Uso en laboratorio</strong><p>{model.info.uso}</p></div>
+                <div className="m1-detail-tip">💡 Arrastra para rotar · Usa dos dedos o la rueda para acercar</div>
+              </aside>
+            )}
           </div>
         </div>
 
         <div className="m1-nav">
-          <a href="/" className="m1-nav-btn-link secondary">← Inicio</a>
+          <Link to="/" className="m1-nav-btn-link secondary">← Inicio</Link>
           <div className="m1-nav-dots">
             <span className="m1-nav-dot on" />
             <span className="m1-nav-dot" />
             <span className="m1-nav-dot" />
           </div>
-          <a href="/modulo/2" className="m1-nav-btn-link primary">Siguiente módulo →</a>
+          <Link to="/modulo/2" className="m1-nav-btn-link primary">Siguiente módulo →</Link>
         </div>
       </div>
 
-      {modal && createPortal(
-        <DetailModal model={model} onClose={() => setModal(false)} mainCanvasRef={mainCanvasRef} setGlLost={setGlLost} />,
-        document.body
-      )}
     </>
   )
 }

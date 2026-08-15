@@ -3,8 +3,9 @@
   align-items: center;
   gap: 24px;
   padding: 14px 32px;
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid var(--clr-border);
+  background: rgba(246, 250, 247, 0.88);
+  border-bottom: 1px solid rgba(33, 140, 104, 0.14);
+  box-shadow: 0 6px 24px rgba(24, 59, 58, 0.05);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   position: sticky;
@@ -23,7 +24,7 @@
  
 .brand-icon {
   font-size: 1.6rem;
-  filter: drop-shadow(0 0 8px rgba(0, 229, 195, 0.5));
+  filter: drop-shadow(0 0 8px rgba(33, 140, 104, 0.28));
 }
  
 .brand-text {
@@ -37,6 +38,7 @@
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--clr-text);
+  letter-spacing: .01em;
 }
  
 .brand-sub {
@@ -89,6 +91,8 @@ border-color: var(--clr-border);
 .nav-module-btn.active {
 color: var(--clr-text);
 border-color: var(--mod-color);
+background: #fff;
+box-shadow: 0 5px 16px rgba(24,59,58,.06);
 }
 
 .nav-module-btn.active::before { opacity: 0.1; }
@@ -114,7 +118,8 @@ flex-shrink: 0;
 .navbar-course {
 font-size: 0.75rem;
 color: var(--clr-text-muted);
-font-style: italic;
+font-style: normal;
+font-weight: 700;
 letter-spacing: 0.03em;
 }
 
