@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment, ContactShadows, Html, Clone } from '@react-three/drei'
 import { animate, stagger } from 'animejs'
+import useLabStore from '../../store/Uselabstore'
 import './ModuloBase.css'
 import './Modulo1.css'
 
@@ -38,8 +39,17 @@ function GLTFModel({ url, scale, position }) {
 }
 
 export default function Modulo1() {
-  const [idx, setIdx]     = useState(0)
+  const instrumentoGuardado = useLabStore((state) => state.instrumentoSeleccionado)
+  const instrumentosExplorados = useLabStore((state) => state.instrumentosExplorados)
+  const setInstrumento = useLabStore((state) => state.setInstrumento)
+  const completarModulo = useLabStore((state) => state.completarModulo)
+  const setModulo = useLabStore((state) => state.setModulo)
+  const [idx, setIdx] = useState(() => {
+    const savedIndex = modelOptions.findIndex((item) => item.id === instrumentoGuardado)
+    return savedIndex >= 0 ? savedIndex : 0
+  })
   const [modal, setModal] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const model             = modelOptions[idx]
   const prev = () => setIdx(i => (i - 1 + modelOptions.length) % modelOptions.length)
   const next = () => setIdx(i => (i + 1) % modelOptions.length)
@@ -48,6 +58,18 @@ export default function Modulo1() {
   const viewerRef = useRef(null)
   const labelRef = useRef(null)
   const counterRef = useRef(null)
+
+  useEffect(() => {
+    setModulo(1)
+  }, [setModulo])
+
+  useEffect(() => {
+    setInstrumento(model.id)
+  }, [model.id, setInstrumento])
+
+  useEffect(() => {
+    if (instrumentosExplorados.length >= modelOptions.length) completarModulo(1)
+  }, [instrumentosExplorados.length, completarModulo])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -154,7 +176,24 @@ export default function Modulo1() {
         </header>
 
         <div className="m1-layout">
-          <aside className="m1-sidebar">
+          <aside className={`m1-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
+            <button
+              className="m1-sidebar-toggle"
+              type="button"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              <span>Guía del módulo</span>
+              <span>{sidebarOpen ? '−' : '+'}</span>
+            </button>
+            <div className="m1-progress-card" aria-label={`${instrumentosExplorados.length} de ${modelOptions.length} instrumentos explorados`}>
+              <div className="m1-progress-copy">
+                <strong>Tu exploración</strong>
+                <span>{instrumentosExplorados.length}/{modelOptions.length}</span>
+              </div>
+              <div className="m1-progress-track"><span style={{ width: `${(instrumentosExplorados.length / modelOptions.length) * 100}%` }} /></div>
+              <small>{instrumentosExplorados.length === modelOptions.length ? '¡Módulo completado!' : 'Selecciona cada instrumento para completar el módulo.'}</small>
+            </div>
             <div className="m1-sidebar-block">
               <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-blue)' }}>Objetivo</div>
               <p className="m1-sidebar-p">Identificar el material de laboratorio necesario para la elaboración de jabones ecológicos mediante saponificación.</p>
@@ -164,15 +203,19 @@ export default function Modulo1() {
               <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-green)' }}>Instrumentos</div>
               <ul className="m1-list">
                 {modelOptions.map((m, i) => (
-                  <li
-                    key={m.id + '-' + i}
-                    className={`m1-list-item ${i === idx ? 'active' : ''}`}
-                    onClick={() => setIdx(i)}
-                    onPointerDown={handlePointerDown}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                  >
-                    <span>{m.emoji}</span><span>{m.label}</span>
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      className={`m1-list-item ${i === idx ? 'active' : ''}`}
+                      onClick={() => setIdx(i)}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                      aria-pressed={i === idx}
+                    >
+                      <span>{m.emoji}</span><span>{m.label}</span>
+                      {instrumentosExplorados.includes(m.id) && <span className="m1-seen" aria-label="Explorado">✓</span>}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -200,8 +243,10 @@ export default function Modulo1() {
                   onPointerDown={handlePointerDown}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
+                  aria-pressed={i === idx}
                 >
                   <span>{m.emoji}</span><span>{m.label}</span>
+                  {instrumentosExplorados.includes(m.id) && <span className="m1-tab-seen" aria-hidden="true">✓</span>}
                 </button>
               ))}
             </div>
@@ -223,8 +268,8 @@ export default function Modulo1() {
                 <OrbitControls enableZoom enablePan={false} autoRotate autoRotateSpeed={1.5} />
               </Canvas>
 
-              <button className="m1-arrow m1-arrow-l" onClick={prev} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>‹</button>
-              <button className="m1-arrow m1-arrow-r" onClick={next} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>›</button>
+              <button className="m1-arrow m1-arrow-l" aria-label="Instrumento anterior" onClick={prev} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>‹</button>
+              <button className="m1-arrow m1-arrow-r" aria-label="Instrumento siguiente" onClick={next} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>›</button>
 
               <div ref={labelRef} className="m1-label-float">{model.emoji} {model.label}</div>
             </div>

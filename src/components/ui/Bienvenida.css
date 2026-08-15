@@ -98,6 +98,28 @@
   justify-content: center;
   margin-top: 8px;
 }
+
+.home-progress {
+  width:min(100%,760px);
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+  padding:20px 22px;
+  border:1px solid rgba(33,140,104,.18);
+  border-radius:18px;
+  background:rgba(255,255,255,.82);
+  box-shadow:var(--shadow-soft);
+  position:relative;
+  z-index:1;
+}
+.home-progress-heading { display:flex; align-items:center; justify-content:space-between; gap:20px }
+.home-progress-heading div { display:flex; flex-direction:column; gap:3px }
+.home-progress-heading span { color:var(--clr-green); font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase }
+.home-progress-heading strong { color:var(--clr-text); font-family:var(--font-display); font-size:1rem }
+.home-progress-heading b { color:var(--clr-green-dark); font:800 1.2rem var(--font-display) }
+.home-progress-track { height:9px; overflow:hidden; border-radius:999px; background:var(--clr-green-soft) }
+.home-progress-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--clr-blue),var(--clr-green),var(--clr-orange)); transition:width .5s ease }
+.home-progress small { color:var(--clr-text-muted) }
  
 /* Módulos */
 .modules-grid {
@@ -264,3 +286,6 @@
   .hero-cta { flex-direction: column; width: 100%; }
   .hero-cta a { justify-content: center; }
 }
+
+.mc-status { align-self:flex-start; padding:4px 9px; border-radius:999px; background:var(--clr-blue-soft); color:var(--clr-blue-dark); font-size:.68rem; font-weight:800 }
+.mc-status.completed { background:var(--clr-green-soft); color:var(--clr-green-dark) }

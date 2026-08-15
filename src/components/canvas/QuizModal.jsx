@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { animate } from 'animejs'
+import useLabStore from '../../store/Uselabstore'
 
 const questions = [
   {
@@ -131,6 +132,8 @@ function QuizModal({ onClose }) {
 
   const modalRef = useRef(null)
   const STORAGE_KEY = 'quiz-draft'
+  const guardarPuntuacionQuiz = useLabStore((state) => state.guardarPuntuacionQuiz)
+  const completarModulo = useLabStore((state) => state.completarModulo)
 
   // load draft from sessionStorage on mount
   useEffect(() => {
@@ -199,6 +202,16 @@ function QuizModal({ onClose }) {
   }
 
   const { correct, total } = calculateScore()
+  const answeredCount = Object.keys(answers).length
+
+  const handleShowResults = () => {
+    if (answeredCount < total) return
+    const percentage = Math.round((correct / total) * 100)
+    guardarPuntuacionQuiz(percentage)
+    completarModulo(3)
+    setShowResults(true)
+    try { sessionStorage.removeItem(STORAGE_KEY) } catch (e) {}
+  }
 
   // clear draft when showing results
   useEffect(() => {
@@ -305,18 +318,19 @@ function QuizModal({ onClose }) {
           ))}
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
             <button
-              onClick={() => { setShowResults(true); try { sessionStorage.removeItem(STORAGE_KEY) } catch(e){} }}
+              onClick={handleShowResults}
+              disabled={answeredCount < total}
               style={{
                 padding: '1rem 2rem',
-                background: 'var(--clr-orange)',
+                background: answeredCount < total ? 'var(--clr-border)' : 'var(--clr-orange)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '1rem',
-                cursor: 'pointer',
+                cursor: answeredCount < total ? 'not-allowed' : 'pointer',
               }}
             >
-              Ver Resultados
+              {answeredCount < total ? `Faltan ${total - answeredCount} respuestas` : 'Ver resultados'}
             </button>
           </div>
           {showResults && (

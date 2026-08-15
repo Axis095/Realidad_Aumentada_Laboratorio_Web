@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { animate } from 'animejs'
+import useLabStore from '../../store/Uselabstore'
 import './Navbar.css'
 
 const modulos = [
@@ -12,6 +13,7 @@ const modulos = [
 export default function Navbar() {
 const location = useLocation()
 const navRef = useRef(null)
+const modulosCompletados = useLabStore((state) => state.modulosCompletados)
 
 useEffect(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
@@ -48,6 +50,7 @@ return (
         >
             <span className="mod-num">{m.num}</span>
             <span className="mod-label">{m.label}</span>
+            {modulosCompletados.includes(Number(m.num)) && <span className="nav-complete" aria-label="Módulo completado">✓</span>}
         </NavLink>
         ))}
     </div>

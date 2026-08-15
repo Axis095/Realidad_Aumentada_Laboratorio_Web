@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import useLabStore from '../../store/Uselabstore'
 import './ModuloBase.css'
 
 export default function ModuloBase({
@@ -16,6 +17,13 @@ nextPath,
 children,
 pageStyle,
 }) {
+const setModulo = useLabStore((state) => state.setModulo)
+const modulosCompletados = useLabStore((state) => state.modulosCompletados)
+
+useEffect(() => {
+  setModulo(Number(num))
+}, [num, setModulo])
+
 return (
     <div className="modulo-page" style={{ '--mod-color': color, ...pageStyle }}>
       {/* Header del módulo */}
@@ -81,7 +89,8 @@ return (
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className={`progress-dot ${Number(num) === n ? 'active' : ''}`}
+              className={`progress-dot ${Number(num) === n ? 'active' : ''} ${modulosCompletados.includes(n) ? 'completed' : ''}`}
+              aria-label={`Módulo ${n}${modulosCompletados.includes(n) ? ' completado' : ''}`}
               style={Number(num) === n ? { background: color } : {}}
             />
           ))}
