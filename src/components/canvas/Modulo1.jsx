@@ -4,6 +4,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment, ContactShadows, Html, Clone } from '@react-three/drei'
 import { animate, stagger } from 'animejs'
 import useLabStore from '../../store/Uselabstore'
+import usePerformanceProfile from '../../hooks/usePerformanceProfile'
 import './ModuloBase.css'
 import './Modulo1.css'
 
@@ -39,6 +40,8 @@ function GLTFModel({ url, scale, position }) {
 }
 
 export default function Modulo1() {
+  const { profile } = usePerformanceProfile()
+  const reducedPerformance = profile === 'reduced'
   const instrumentoGuardado = useLabStore((state) => state.instrumentoSeleccionado)
   const instrumentosExplorados = useLabStore((state) => state.instrumentosExplorados)
   const setInstrumento = useLabStore((state) => state.setInstrumento)
@@ -254,7 +257,8 @@ export default function Modulo1() {
             <div className="m1-canvas-box">
               <Canvas
                 camera={{ position:[0,2,6], fov:45 }}
-                dpr={[1, 1.5]}
+                dpr={reducedPerformance ? 1 : [1, 1.35]}
+                frameloop="demand"
                 gl={{ antialias: false, powerPreference: 'low-power' }}
               >
                 <ambientLight intensity={0.5} />
@@ -262,10 +266,10 @@ export default function Modulo1() {
                 <pointLight position={[-4,2,-4]} intensity={0.3} color="#3974d8" />
                 <Suspense fallback={<Loader />}>
                   <GLTFModel url={model.url} scale={model.scale} position={model.position} />
-                  <Environment preset="studio" />
-                  <ContactShadows position={[0,-1.5,0]} opacity={0.4} scale={6} blur={2} />
+                  {!reducedPerformance && <Environment preset="studio" />}
+                  {!reducedPerformance && <ContactShadows position={[0,-1.5,0]} opacity={0.35} scale={6} blur={2} frames={1} resolution={256} />}
                 </Suspense>
-                <OrbitControls enableZoom enablePan={false} autoRotate autoRotateSpeed={1.5} />
+                <OrbitControls enableZoom enablePan={false} />
               </Canvas>
 
               <button className="m1-arrow m1-arrow-l" aria-label="Instrumento anterior" onClick={prev} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>‹</button>

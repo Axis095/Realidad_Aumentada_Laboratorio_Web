@@ -1,0 +1,6 @@
+.route-loader { flex:1; min-height:clamp(300px,68vh,620px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:24px; color:var(--clr-text); text-align:center; background:radial-gradient(circle at center,var(--clr-green-soft),transparent 62%) }
+.route-loader.compact { position:fixed; inset:0; z-index:99998; min-height:0; background:rgba(246,250,247,.96) }
+.route-loader-mark { display:grid; place-items:center; width:54px; height:54px; margin-bottom:4px; border-radius:18px; background:#fff; color:var(--clr-green); font-size:1.7rem; box-shadow:var(--shadow-soft) }
+.route-loader strong { font:800 1rem var(--font-display) }.route-loader > span { color:var(--clr-text-muted); font-size:.8rem }
+.route-loader-dots { display:flex; gap:7px; height:18px; margin-top:7px; align-items:flex-end }.route-loader-dot { display:block; width:7px; height:7px; border-radius:50%; background:var(--clr-green) }
+.performance-reduced .route-loader { background:var(--clr-bg) }.performance-reduced .route-loader-mark { box-shadow:none }

@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { animate } from 'animejs'
+import React from 'react'
+import { NavLink } from 'react-router-dom'
 import useLabStore from '../../store/Uselabstore'
+import PerformanceToggle from './PerformanceToggle'
 import './Navbar.css'
 
 const modulos = [
@@ -11,25 +11,10 @@ const modulos = [
 ]
 
 export default function Navbar() {
-const location = useLocation()
-const navRef = useRef(null)
 const modulosCompletados = useLabStore((state) => state.modulosCompletados)
 
-useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-    const activeItem = navRef.current?.querySelector('.nav-module-btn.active')
-    if (!activeItem) return
-    animate(activeItem, {
-        scale: [0.97, 1],
-        opacity: [0.7, 1],
-        duration: 300,
-        ease: 'outCubic',
-        composition: 'replace',
-    })
-}, [location.pathname])
-
 return (
-    <nav ref={navRef} className="navbar">
+    <nav className="navbar">
     <NavLink to="/" className="navbar-brand">
         <span className="brand-icon">⚗</span>
         <span className="brand-text">
@@ -57,6 +42,7 @@ return (
 
     <div className="navbar-actions">
         <span className="navbar-course">Química · Experiencia interactiva</span>
+        <PerformanceToggle />
     </div>
     </nav>
 )

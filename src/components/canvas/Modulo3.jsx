@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { animate, stagger } from 'animejs'
 import ModuloBase from './ModuloBase'
-import QuizModal from './QuizModal'
+import RouteLoader from '../ui/RouteLoader'
 import useLabStore from '../../store/Uselabstore'
 import './ModuloBase.css'
 import './Aprendizaje.css'
@@ -48,6 +48,8 @@ const molecules = [
     role: 'Forma micelas capaces de rodear la suciedad grasa para facilitar su eliminación con agua.',
   },
 ]
+
+const QuizModal = lazy(() => import('./QuizModal'))
 
 function MoleculeDiagram({ molecule }) {
   return (
@@ -188,7 +190,7 @@ export default function Modulo3() {
           </footer>
         </section>
       </ModuloBase>
-      {showQuiz && <QuizModal onClose={() => setShowQuiz(false)} />}
+      {showQuiz && <Suspense fallback={<RouteLoader compact />}><QuizModal onClose={() => setShowQuiz(false)} /></Suspense>}
     </>
   )
 }
