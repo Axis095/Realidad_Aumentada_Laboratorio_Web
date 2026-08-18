@@ -14,6 +14,7 @@ export default function Navbar() {
 const modulosCompletados = useLabStore((state) => state.modulosCompletados)
 
 return (
+    <>
     <nav className="navbar">
     <NavLink to="/" className="navbar-brand">
         <span className="brand-icon">⚗</span>
@@ -45,5 +46,10 @@ return (
         <PerformanceToggle />
     </div>
     </nav>
+
+    <div className="mobile-performance-fab">
+        <PerformanceToggle compact />
+    </div>
+    </>
 )
 }
