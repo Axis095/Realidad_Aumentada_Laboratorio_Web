@@ -1,0 +1,105 @@
+.ar-print-page {
+  width: min(100%, 940px);
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  color: var(--clr-text);
+}
+
+.ar-print-back { color: var(--clr-green-dark); font-weight: 800; text-decoration: none; }
+.ar-print-back:hover { text-decoration: underline; }
+.ar-print-heading { display: flex; align-items: center; gap: 24px; margin: 25px 0; }
+.ar-print-heading > div { flex: 1; min-width: 0; }
+.ar-print-eyebrow { color: var(--clr-orange-dark); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 900; }
+.ar-print-heading h1 { font: 400 clamp(1.6rem, 4vw, 2.25rem)/1.2 var(--font-display); margin: 8px 0 12px; }
+.ar-print-heading p:not(.ar-print-eyebrow) { color: var(--clr-text-muted); line-height: 1.55; }
+.ar-print-button { flex-shrink: 0; min-height: 46px; padding: 12px 20px; border: 0; border-radius: 99px; font: 800 .9rem var(--font-body); color: #fff; background: var(--clr-green-dark); cursor: pointer; }
+.ar-print-button:hover:not(:disabled) { background: var(--clr-green); }
+.ar-print-button:disabled { cursor: not-allowed; background: #e0e8e4; color: #596e67; }
+.ar-print-config { padding: 22px; background: #fff; border: 1px solid var(--clr-border); border-radius: 18px; margin-bottom: 26px; }
+.ar-print-config label { display: block; font-weight: 900; font-size: .9rem; margin-bottom: 8px; }
+.ar-print-config input { display: block; width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid #9db9ac; border-radius: 10px; background: #fff; color: var(--clr-text); font: 400 1rem var(--font-body); }
+.ar-print-config > p { color: var(--clr-text-muted); line-height: 1.5; font-size: .82rem; margin-top: 8px; }
+.ar-print-status { margin-top: 15px; padding: 12px 14px; border-radius: 10px; background: var(--clr-green-soft); color: var(--clr-green-dark); font-size: .83rem; line-height: 1.5; overflow-wrap: anywhere; }
+.ar-print-status span { display: block; margin-top: 5px; }
+.ar-print-status a { color: inherit; font-weight: 900; }
+.ar-print-status-warning { background: var(--clr-orange-soft); color: #8d411d; }
+.ar-print-blocked-message { display: none; }
+
+.ar-print-card { max-width: 760px; margin: 0 auto; padding: 30px; background: #fff; border: 1px solid var(--clr-border); border-top: 5px solid var(--clr-green); border-radius: 20px; box-shadow: var(--shadow-soft); }
+.ar-print-card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.ar-print-brand { display: flex; align-items: center; font: 400 1.2rem var(--font-display); color: var(--clr-green-dark); }
+.ar-print-brand > span:first-child { color: var(--clr-blue-dark); }
+.ar-print-brand-dots { display: inline-flex; gap: 4px; margin-left: 10px; }
+.ar-print-brand-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--clr-green); }
+.ar-print-brand-dots i:nth-child(2) { background: var(--clr-orange); }
+.ar-print-brand-dots i:nth-child(3) { background: var(--clr-blue); }
+.ar-print-demo-badge { padding: 5px 9px; border: 1px solid #f0c3a7; border-radius: 6px; color: var(--clr-orange-dark); font-size: .69rem; font-weight: 900; }
+.ar-print-card-title { margin: 27px 0; }
+.ar-print-card-title > p { color: var(--clr-text-muted); font-size: .8rem; margin-bottom: 7px; }
+.ar-print-card-title h2 { font: 400 clamp(1.8rem, 5vw, 2.6rem)/1.15 var(--font-display); letter-spacing: -.02em; }
+.ar-print-card h3 { font-size: 1rem; line-height: 1.5; font-weight: 900; }
+.ar-print-card h3 > span { color: var(--clr-blue-dark); font-weight: 900; margin-right: 7px; }
+.ar-print-qr-step { display: grid; grid-template-columns: 135px minmax(0, 1fr); gap: 18px; align-items: center; padding-bottom: 22px; border-bottom: 1px solid var(--clr-border); }
+.ar-print-qr-step p { font-size: .9rem; line-height: 1.6; margin-top: 5px; }
+.ar-print-qr-step .ar-print-small { color: var(--clr-text-muted); font-size: .75rem; }
+.ar-print-qr-box { aspect-ratio: 1; width: 135px; background: #fff; display: grid; place-items: center; }
+.ar-print-qr-box img { display: block; width: 100%; height: auto; }
+.ar-print-qr-placeholder { display: grid; place-items: center; padding: 12px; width: 100%; height: 100%; border: 1px dashed #9db9ac; border-radius: 9px; color: var(--clr-text-muted); text-align: center; font-size: .8rem; }
+.ar-print-marker-step { text-align: center; padding-top: 23px; }
+.ar-print-marker-step h3 > span { color: var(--clr-orange-dark); }
+.ar-print-marker-step > p { margin: 6px auto 0; max-width: 460px; font-size: .85rem; line-height: 1.5; }
+.ar-print-marker { width: min(100%, 340px); aspect-ratio: 1; margin: 13px auto 0; padding: 18px; background: #fff; }
+.ar-print-marker img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ar-print-marker-step .ar-print-marker-hint { font-size: .72rem; color: var(--clr-text-muted); margin: 0 auto 22px; }
+.ar-print-fact { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px; border-left: 3px solid var(--clr-green); background: var(--clr-green-soft); border-radius: 0 10px 10px 0; }
+.ar-print-fact > span { color: var(--clr-green-dark); font-weight: 900; }
+.ar-print-fact p { font-size: .82rem; line-height: 1.5; }
+.ar-print-card-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding-top: 20px; color: var(--clr-text-muted); font-size: .68rem; }
+.ar-print-destination { overflow-wrap: anywhere; }
+.ar-print-tips { max-width: 760px; margin: 26px auto 0; padding: 0 5px; }
+.ar-print-tips h2 { font-size: 1rem; margin-bottom: 10px; }
+.ar-print-tips ul { padding-left: 21px; color: var(--clr-text-muted); font-size: .85rem; line-height: 1.6; }
+.ar-print-tips li + li { margin-top: 7px; }
+
+@media (max-width: 580px) {
+  .ar-print-page { padding: 22px 12px 34px; }
+  .ar-print-heading { flex-direction: column; align-items: stretch; gap: 15px; }
+  .ar-print-config { padding: 16px; }
+  .ar-print-card { padding: 20px 16px; border-radius: 14px; }
+  .ar-print-qr-step { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .ar-print-qr-box { margin: 0 auto; width: 150px; }
+  .ar-print-fact { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 13px; }
+  .ar-print-marker { padding: 12px; }
+}
+
+@page { size: A4 portrait; margin: 12mm; }
+
+@media print {
+  body:has(.ar-print-page) { background: #fff !important; }
+  body:has(.ar-print-page)::before { display: none !important; }
+  .app-shell:has(.ar-print-page), .app-main:has(.ar-print-page) { display: block; min-height: 0; padding: 0; }
+  .ar-print-page { width: 100%; max-width: none; margin: 0; padding: 0; color: #183b3a; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .ar-print-tools { display: none !important; }
+  .ar-print-page:not(.ar-print-ready) .ar-print-card { display: none; }
+  .ar-print-page:not(.ar-print-ready) .ar-print-blocked-message { display: block; font: 14pt/1.6 sans-serif; color: #000; }
+  .ar-print-card { width: 100%; max-width: none; margin: 0; padding: 8mm; border: .3mm solid #d9e7e2; border-top: 1.5mm solid #218c68; border-radius: 0; box-shadow: none; break-inside: avoid; }
+  .ar-print-card-header { gap: 3mm; }
+  .ar-print-brand { font-size: 14pt; }
+  .ar-print-demo-badge { font-size: 8pt; }
+  .ar-print-card-title { margin: 6mm 0; }
+  .ar-print-card-title > p { font-size: 9pt; }
+  .ar-print-card-title h2 { font-size: 28pt; }
+  .ar-print-card h3 { font-size: 12pt; }
+  .ar-print-qr-step { grid-template-columns: 38mm minmax(0, 1fr); gap: 5mm; padding-bottom: 4mm; }
+  .ar-print-qr-box { width: 38mm; height: 38mm; margin: 0; }
+  .ar-print-qr-step p { font-size: 10pt; }
+  .ar-print-qr-step .ar-print-small { font-size: 8pt; }
+  .ar-print-marker-step { padding-top: 5mm; }
+  .ar-print-marker-step > p { font-size: 9pt; max-width: 135mm; }
+  .ar-print-marker { width: 90mm; height: 90mm; padding: 5mm; margin: 2mm auto 0; }
+  .ar-print-marker-step .ar-print-marker-hint { font-size: 8pt; margin: 0 auto 4mm; }
+  .ar-print-fact { grid-template-columns: 29mm minmax(0, 1fr); gap: 4mm; padding: 4mm; }
+  .ar-print-fact > span { font-size: 10pt; }
+  .ar-print-fact p { font-size: 9pt; }
+  .ar-print-card-footer { font-size: 7pt; padding-top: 4mm; }
+}

@@ -24,6 +24,8 @@ const useLabStore = create(
       anteriorPaso: () =>
         set((state) => ({ pasoActual: Math.max(state.pasoActual - 1, 0) })),
       resetPasos: () => set({ pasoActual: 0 }),
+      secuenciaModulo2Completada: false,
+      completarSecuenciaModulo2: () => set({ secuenciaModulo2Completada: true }),
 
       instrumentoSeleccionado: 'beaker',
       instrumentosExplorados: [],
@@ -69,6 +71,7 @@ const useLabStore = create(
         ultimaRuta: '/modulo/1',
         pasoActual: 0,
         pasosModulo2Explorados: [],
+        secuenciaModulo2Completada: false,
         instrumentoSeleccionado: 'beaker',
         instrumentosExplorados: [],
         arActivo: false,
@@ -80,10 +83,13 @@ const useLabStore = create(
     }),
     {
       name: 'labvirtual-progress',
-      version: 2,
+      version: 3,
       migrate: (persistedState) => ({
         ...(persistedState ?? {}),
         pasosModulo2Explorados: persistedState?.pasosModulo2Explorados ?? [],
+        secuenciaModulo2Completada: persistedState?.secuenciaModulo2Completada
+          ?? persistedState?.modulosCompletados?.includes(2)
+          ?? false,
         moleculaSeleccionada: persistedState?.moleculaSeleccionada ?? 'triglicerido',
         moleculasExploradas: persistedState?.moleculasExploradas ?? [],
       }),
@@ -92,6 +98,7 @@ const useLabStore = create(
         ultimaRuta: state.ultimaRuta,
         pasoActual: state.pasoActual,
         pasosModulo2Explorados: state.pasosModulo2Explorados,
+        secuenciaModulo2Completada: state.secuenciaModulo2Completada,
         instrumentoSeleccionado: state.instrumentoSeleccionado,
         instrumentosExplorados: state.instrumentosExplorados,
         moleculaSeleccionada: state.moleculaSeleccionada,

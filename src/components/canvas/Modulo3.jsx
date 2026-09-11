@@ -51,7 +51,7 @@ const molecules = [
 
 const QuizModal = lazy(() => import('./QuizModal'))
 
-function MoleculeDiagram({ molecule }) {
+function MoleculeDiagram({ molecule, showLabels }) {
   return (
     <div className="molecule-diagram" style={{ '--molecule-color': molecule.color }} aria-label={`Representación simplificada de ${molecule.name}`}>
       <div className="molecule-orbit orbit-a" />
@@ -59,7 +59,7 @@ function MoleculeDiagram({ molecule }) {
       {molecule.nodes.map((node, index) => (
         <React.Fragment key={`${node}-${index}`}>
           {index > 0 && <span className={`molecule-bond bond-${index}`} />}
-          <span className={`molecule-node node-${index}`}>{node}</span>
+          <span className={`molecule-node node-${index}`} aria-label={node}>{showLabels ? node : null}</span>
         </React.Fragment>
       ))}
     </div>
@@ -69,6 +69,7 @@ function MoleculeDiagram({ molecule }) {
 export default function Modulo3() {
   const [showQuiz, setShowQuiz] = useState(false)
   const [challengeAnswer, setChallengeAnswer] = useState(null)
+  const [showAtomLabels, setShowAtomLabels] = useState(true)
   const selectedId = useLabStore((state) => state.moleculaSeleccionada)
   const explored = useLabStore((state) => state.moleculasExploradas)
   const setMolecule = useLabStore((state) => state.setMolecula)
@@ -147,8 +148,20 @@ export default function Modulo3() {
             ))}
           </div>
 
+          <div className="molecule-tools">
+            <div className="atom-legend" aria-label="Convención de colores de los átomos">
+              <span><i className="atom-c" />Carbono</span>
+              <span><i className="atom-o" />Oxígeno</span>
+              <span><i className="atom-h" />Hidrógeno</span>
+              <span><i className="atom-na" />Sodio</span>
+            </div>
+            <button type="button" aria-pressed={showAtomLabels} onClick={() => setShowAtomLabels((visible) => !visible)}>
+              Etiquetas {showAtomLabels ? 'activadas' : 'ocultas'}
+            </button>
+          </div>
+
           <div className="molecule-stage">
-            <MoleculeDiagram molecule={selected} />
+            <MoleculeDiagram molecule={selected} showLabels={showAtomLabels} />
             <article className="molecule-copy">
               <span className="learning-kicker">{selected.kind}</span>
               <h3>{selected.name}</h3>

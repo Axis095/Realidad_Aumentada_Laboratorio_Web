@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { animate, stagger } from 'animejs'
 import ModuloBase from './ModuloBase'
+import SequenceChallenge from './SequenceChallenge'
 import useLabStore from '../../store/Uselabstore'
 import './ModuloBase.css'
 import './Aprendizaje.css'
@@ -82,12 +83,20 @@ export default function Modulo2() {
   const explored = useLabStore((state) => state.pasosModulo2Explorados)
   const visitarPaso = useLabStore((state) => state.visitarPasoModulo2)
   const completarModulo = useLabStore((state) => state.completarModulo)
+  const sequenceCompleted = useLabStore((state) => state.secuenciaModulo2Completada)
+  const completeSequence = useLabStore((state) => state.completarSecuenciaModulo2)
   const stageRef = useRef(null)
+  const [showWhy, setShowWhy] = useState(false)
+  const [safetyAnswer, setSafetyAnswer] = useState(null)
   const step = steps[pasoActual]
 
   useEffect(() => {
     visitarPaso(pasoActual)
   }, [pasoActual, visitarPaso])
+
+  useEffect(() => {
+    setShowWhy(false)
+  }, [pasoActual])
 
   useEffect(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
@@ -108,7 +117,10 @@ export default function Modulo2() {
   const selectStep = (index) => visitarPaso(index)
   const nextStep = () => selectStep(Math.min(pasoActual + 1, steps.length - 1))
   const previousStep = () => selectStep(Math.max(pasoActual - 1, 0))
-  const complete = () => completarModulo(2)
+  const canComplete = explored.length >= steps.length && sequenceCompleted
+  const complete = () => {
+    if (canComplete) completarModulo(2)
+  }
 
   return (
     <ModuloBase
@@ -163,9 +175,38 @@ export default function Modulo2() {
             <p>{step.description}</p>
             <div className="concept-card"><b>¿Qué está ocurriendo?</b><span>{step.concept}</span></div>
             <div className="safety-card"><b>🛡️ Seguridad</b><span>{step.safety}</span></div>
+            {pasoActual === 1 && (
+              <div className="safety-check">
+                <b>Decisión de seguridad</b>
+                <p>¿Cuál es la forma correcta de preparar la solución alcalina?</p>
+                <div>
+                  <button type="button" className={safetyAnswer === 'correct' ? 'correct' : ''} aria-pressed={safetyAnswer === 'correct'} onClick={() => setSafetyAnswer('correct')}>Agregar NaOH lentamente al agua</button>
+                  <button type="button" className={safetyAnswer === 'incorrect' ? 'incorrect' : ''} aria-pressed={safetyAnswer === 'incorrect'} onClick={() => setSafetyAnswer('incorrect')}>Verter agua directamente sobre el NaOH</button>
+                </div>
+                {safetyAnswer && (
+                  <small className={safetyAnswer} role="status">
+                    {safetyAnswer === 'correct'
+                      ? '✓ Correcto. Este orden reduce el riesgo de una reacción violenta y salpicaduras.'
+                      : 'Inténtalo nuevamente. El agua sobre NaOH puede generar calor y salpicaduras de forma peligrosa.'}
+                  </small>
+                )}
+              </div>
+            )}
+            {pasoActual === steps.length - 1 && (
+              <div className="why-reaction">
+                <button type="button" onClick={() => setShowWhy((visible) => !visible)} aria-expanded={showWhy}>
+                  ¿Por qué ocurre esta reacción? <span aria-hidden="true">{showWhy ? '−' : '+'}</span>
+                </button>
+                {showWhy && (
+                  <p>El NaOH rompe los enlaces éster de los triglicéridos. Así se liberan glicerina y sales de ácidos grasos, que constituyen el jabón.</p>
+                )}
+              </div>
+            )}
             <div className="stage-metric"><span>Cambio clave</span><strong>{step.metric}</strong></div>
           </article>
         </div>
+
+        <SequenceChallenge completed={sequenceCompleted} onComplete={completeSequence} />
 
         <footer className="learning-controls">
           <button type="button" className="learning-btn secondary" onClick={previousStep} disabled={pasoActual === 0}>← Anterior</button>
@@ -173,8 +214,10 @@ export default function Modulo2() {
           {pasoActual < steps.length - 1 ? (
             <button type="button" className="learning-btn primary green" onClick={nextStep}>Siguiente etapa →</button>
           ) : (
-            <button type="button" className="learning-btn primary green" onClick={complete} disabled={explored.length < steps.length}>
-              {explored.length < steps.length ? `Explora ${steps.length - explored.length} etapa(s) más` : 'Completar módulo ✓'}
+            <button type="button" className="learning-btn primary green" onClick={complete} disabled={!canComplete}>
+              {explored.length < steps.length
+                ? `Explora ${steps.length - explored.length} etapa(s) más`
+                : !sequenceCompleted ? 'Completa el reto de secuencia' : 'Completar módulo ✓'}
             </button>
           )}
         </footer>

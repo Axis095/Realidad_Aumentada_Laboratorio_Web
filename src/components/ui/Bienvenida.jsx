@@ -8,11 +8,14 @@ export default function Bienvenida() {
   const modulosCompletados = useLabStore((state) => state.modulosCompletados)
   const instrumentosExplorados = useLabStore((state) => state.instrumentosExplorados)
   const pasosExplorados = useLabStore((state) => state.pasosModulo2Explorados)
+  const secuenciaModulo2Completada = useLabStore((state) => state.secuenciaModulo2Completada)
   const moleculasExploradas = useLabStore((state) => state.moleculasExploradas)
   const progresoModulo1 = modulosCompletados.includes(1)
     ? 1
     : Math.min(instrumentosExplorados.length / 10, 1)
-  const progresoModulo2 = modulosCompletados.includes(2) ? 1 : Math.min(pasosExplorados.length / 5, 1)
+  const progresoModulo2 = modulosCompletados.includes(2)
+    ? 1
+    : Math.min((pasosExplorados.length + Number(secuenciaModulo2Completada)) / 6, 1)
   const progresoModulo3 = modulosCompletados.includes(3) ? 1 : Math.min(moleculasExploradas.length / 4, 1)
   const progresoGeneral = Math.round(((progresoModulo1 + progresoModulo2 + progresoModulo3) / 3) * 100)
   const haComenzado = progresoGeneral > 0
@@ -33,9 +36,8 @@ export default function Bienvenida() {
           Proyecto de Quimica, elaboración de Jabónes
         </div>
  
-        <h1 className="hero-title fade-up-delay-1">
-          Laboratorio Virtual de<br />
-          <span className="hero-highlight">Saponificación</span>
+        <h1 className="hero-title fade-up-delay-1 hero-highlight">
+          Laboratorio Virtual<br />
         </h1>
  
         <p className="hero-desc fade-up-delay-2">
@@ -50,6 +52,9 @@ export default function Bienvenida() {
           </Link>
           <Link to="/modulo/2" className="btn-secondary">
             Ver reacción química
+          </Link>
+          <Link to="/ar/beaker" className="btn-secondary">
+            Probar tarjeta en realidad aumentada
           </Link>
         </div>
       </section>
