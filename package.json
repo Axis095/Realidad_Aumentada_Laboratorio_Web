@@ -8,6 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "test:ar": "playwright test",
+        "test:models": "playwright test --config playwright.models.config.js",
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {

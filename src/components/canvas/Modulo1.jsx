@@ -1,43 +1,17 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Environment, ContactShadows, Html, Clone } from '@react-three/drei'
+import InstrumentScene from './InstrumentScene'
+import { MODULE1_INSTRUMENTS, getARInstrument, instrumentPath } from '../../data/instruments'
 import { animate, stagger } from 'animejs'
 import useLabStore from '../../store/Uselabstore'
 import usePerformanceProfile from '../../hooks/usePerformanceProfile'
 import './ModuloBase.css'
 import './Modulo1.css'
 
-const modelOptions = [
-  { id: 'beaker',   label: 'Vaso de precipitados', emoji: '🧪', url: '/models/VasoFinal.glb',          scale: 3.5, position: [0,-1,0], info: { descripcion: 'Recipiente cilíndrico de vidrio utilizado para contener líquidos y realizar reacciones químicas.',      uso: 'Se utiliza para mezclar sustancias, calentar soluciones y observar reacciones en el laboratorio.' } },
-  { id: 'probeta',  label: 'Probeta graduada',      emoji: '⚗️', url: '/models/probeta10M.glb',        scale: 0.45, position: [0,-1,0], info: { descripcion: 'Tubo cilíndrico graduado para medir volúmenes de líquidos con precisión.',                           uso: 'Ideal para medir volúmenes exactos en experimentos químicos.' } },
-  { id: 'balanza',  label: 'Balanza Digital',       emoji: '⚖️', url: '/models/digital_kitchen5M.glb', scale: 0.2,  position: [0,-1,0], info: { descripcion: 'Instrumento electrónico para medir la masa de sustancias con alta precisión.',                        uso: 'Esencial para pesar reactivos y productos en reacciones químicas.' } },
-  { id: 'termo',    label: 'Termómetro',            emoji: '🌡️', url: '/models/termometro5M.glb',      scale: 0.5,  position: [0,-1,0], info: { descripcion: 'Dispositivo para medir la temperatura de sustancias.',                                                uso: 'Se utiliza para controlar temperaturas en reacciones exotérmicas o endotérmicas.' } },
-  { id: 'agitador', label: 'Agitador de Vidrio',   emoji: '🔬', url: '/models/agitador_vidrio5M.glb', scale: 0.05, position: [0,-1,0], info: { descripcion: 'Varilla de vidrio para mezclar soluciones manualmente.',                                               uso: 'Ayuda a disolver sólidos en líquidos y homogenizar mezclas.' } },
-  { id: 'espatula', label: 'Espátula',              emoji: '🔧', url: '/models/blade5M.glb',           scale: 0.1,  position: [0,-1,0], info: { descripcion: 'Herramienta metálica para transferir sólidos en pequeñas cantidades.',                                  uso: 'Útil para medir y transferir polvos o cristales sin derramar.' } },
-  { id: 'guantes',  label: 'Guantes',               emoji: '🧤', url: '/models/blue_nitrile5M.glb',    scale: 0.5,  position: [0,-1,0], info: { descripcion: 'Guantes resistentes a químicos para proteger las manos.',                                               uso: 'Protegen contra sustancias corrosivas y mantienen la higiene en el laboratorio.' } },
-  { id: 'parrilla', label: 'Parrilla Eléctrica',   emoji: '🔥', url: '/models/ParrillaFinal.glb', scale: 2.5, position: [0,-1,0], info: { descripcion: 'Plataforma calefactora para calentar recipientes de laboratorio.', uso: 'Se utiliza para calentar mezclas a temperaturas controladas.' } },
-  { id: 'molde',    label: 'Molde para Jabones',   emoji: '🧼', url: '/models/mintOrganizer5M.glb',   scale: 0.07, position: [0,-1,0], info: { descripcion: 'Recipientes para dar forma a los jabones durante la solidificación.',                                    uso: 'Permiten crear jabones con formas específicas y facilitar su extracción.' } },
-  { id: 'gafas',    label: 'Lentes de Cristal de Protección',   emoji: '🕶️', url: '/models/LentesFinal.glb',   scale: 2.5, position: [0,-1,0], info: { descripcion: 'Este equipamiento recibe el nombre de gafas de seguridad o gafas de protección.',                                    uso: 'Proteger los ojos del trabajador de forma efectiva, garantizando su seguridad.' } },
-]
-
-function Loader() {
-  return (
-    <Html center>
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'var(--clr-blue)', fontFamily:'var(--font-body)', fontSize:'0.82rem' }}>
-        <div style={{ width:32, height:32, border:'3px solid rgba(57,116,216,.18)', borderTop:'3px solid var(--clr-blue)', borderRadius:'50%', animation:'m1spin 0.9s linear infinite' }} />
-        Cargando...
-      </div>
-    </Html>
-  )
-}
-
-function GLTFModel({ url, scale, position }) {
-  const { scene } = useGLTF(url)
-  // Keep useGLTF's cached scene as an immutable template. A deep clone gives
-  // every mount its own geometries and materials, which R3F can safely dispose.
-  return <Clone object={scene} deep scale={scale} position={position} />
-}
+const modelOptions = MODULE1_INSTRUMENTS.map(item => ({
+  id: item.id, label: item.title, emoji: item.emoji, url: item.modelUrl,
+  info: { descripcion: item.description, uso: item.use },
+}))
 
 export default function Modulo1() {
   const { profile } = usePerformanceProfile()
@@ -255,22 +229,7 @@ export default function Modulo1() {
             </div>
 
             <div className="m1-canvas-box">
-              <Canvas
-                camera={{ position:[0,2,6], fov:45 }}
-                dpr={reducedPerformance ? 1 : [1, 1.35]}
-                frameloop="demand"
-                gl={{ antialias: false, powerPreference: 'low-power' }}
-              >
-                <ambientLight intensity={0.5} />
-                <directionalLight position={[5,5,5]} intensity={1} />
-                <pointLight position={[-4,2,-4]} intensity={0.3} color="#3974d8" />
-                <Suspense fallback={<Loader />}>
-                  <GLTFModel url={model.url} scale={model.scale} position={model.position} />
-                  {!reducedPerformance && <Environment preset="studio" />}
-                  {!reducedPerformance && <ContactShadows position={[0,-1.5,0]} opacity={0.35} scale={6} blur={2} frames={1} resolution={256} />}
-                </Suspense>
-                <OrbitControls enableZoom enablePan={false} />
-              </Canvas>
+              <InstrumentScene model={model} reducedPerformance={reducedPerformance} />
 
               <button className="m1-arrow m1-arrow-l" aria-label="Instrumento anterior" onClick={prev} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>‹</button>
               <button className="m1-arrow m1-arrow-r" aria-label="Instrumento siguiente" onClick={next} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>›</button>
@@ -280,6 +239,7 @@ export default function Modulo1() {
 
             <div className="m1-viewer-footer">
               <span ref={counterRef} className="m1-counter">{idx + 1} / {modelOptions.length}</span>
+              {getARInstrument(model.id) && <Link className="m1-ar-link" to={instrumentPath(model.id)}>Ver en AR</Link>}
               <button className="m1-detail-btn" onClick={() => setModal(true)} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>Ver detalles →</button>
             </div>
             {modal && (
@@ -307,5 +267,4 @@ export default function Modulo1() {
   )
 }
 
-// Preloading is handled dynamically in the component to avoid GPU pressure
-// EOF
+// Models load on selection; avoid preloading the entire catalog on mobile.

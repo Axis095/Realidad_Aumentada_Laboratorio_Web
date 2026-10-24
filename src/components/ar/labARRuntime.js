@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { AR_DEMO } from './arDemoConfig'
-import { createDemoBeaker } from './demoBeaker'
+import { loadARModel, releaseARModel } from './loadARModel'
+import { getModelFrame } from '../../utils/modelFraming'
+import { matchesMarkerPixels, readPatternTemplates } from './verifyMarkerPattern'
 
 const abortError = () => new DOMException('Experiencia cancelada', 'AbortError')
 // ARToolkit uses shared WASM state while constructing controllers. Serialize startup/teardown.
@@ -38,22 +39,8 @@ function cameraError(error) {
   return new Error(messages[error.name] || 'No pudimos iniciar la cámara. Intenta de nuevo o utiliza la vista 3D.')
 }
 
-function releaseScene(scene) {
-  const geometries = new Set()
-  const materials = new Set()
-  scene.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry)
-    if (object.material) {
-      const list = Array.isArray(object.material) ? object.material : [object.material]
-      list.forEach((material) => materials.add(material))
-    }
-  })
-  geometries.forEach((geometry) => geometry.dispose())
-  materials.forEach((material) => material.dispose())
-  scene.clear()
-}
 
-export async function createLabExperience({ container, mode, reduced = true, signal, onStatus = () => {}, onError = () => {} }) {
+export async function createLabExperience({ container, mode, instrument, reduced = true, signal, onStatus = () => {}, onError = () => {} }) {
   const lifetime = new AbortController()
   let disposed = false
   let stream, video, renderer, controller, controls, resizeObserver
@@ -62,7 +49,8 @@ export async function createLabExperience({ container, mode, reduced = true, sig
   const scene = new THREE.Scene()
   const camera = mode === 'ar' ? new THREE.Camera() : new THREE.PerspectiveCamera(40, 1, 0.01, 100)
   const anchor = new THREE.Group()
-  const model = createDemoBeaker(reduced)
+  const model = new THREE.Group()
+  let modelSize = new THREE.Vector3(1, 1, 1)
   scene.add(new THREE.HemisphereLight('#ffffff', '#8fac9d', 2))
   const light = new THREE.DirectionalLight('#ffffff', 2)
   light.position.set(2, 4, 3)
@@ -85,7 +73,7 @@ export async function createLabExperience({ container, mode, reduced = true, sig
     resizeObserver?.disconnect()
     controls?.dispose()
     if (controller) { controller.dispose(); controller = null }
-    releaseScene(scene)
+    releaseARModel(scene)
     if (renderer) {
       renderer.domElement.removeEventListener('webglcontextlost', contextLost)
       renderer.dispose()
@@ -135,6 +123,12 @@ export async function createLabExperience({ container, mode, reduced = true, sig
       if (lifetime.signal.aborted) throw abortError()
     }
 
+    initTimer = setTimeout(() => fail(new Error('La carga del modelo tardó demasiado. Comprueba la conexión y vuelve a intentarlo.')), 30000)
+    const asset = await waitFor(loadARModel(instrument, lifetime.signal, reduced), lifetime.signal, ({ object }) => releaseARModel(object))
+    model.add(asset.object)
+    modelSize = asset.size
+    clearTimeout(initTimer)
+
     try {
       renderer = new THREE.WebGLRenderer({ alpha: mode === 'ar', antialias: false, powerPreference: 'low-power' })
     } catch {
@@ -142,7 +136,7 @@ export async function createLabExperience({ container, mode, reduced = true, sig
     }
     renderer.setPixelRatio(reduced ? 1 : Math.min(window.devicePixelRatio || 1, 1.35))
     renderer.setClearColor(mode === 'ar' ? '#000000' : '#edf7f1', mode === 'ar' ? 0 : 1)
-    renderer.domElement.setAttribute('aria-label', mode === 'ar' ? 'Modelo sobre el marcador' : 'Vista 3D del vaso')
+    renderer.domElement.setAttribute('aria-label', mode === 'ar' ? 'Modelo sobre el marcador' : `Vista 3D: ${instrument.title}`)
     Object.assign(renderer.domElement.style, { position: 'absolute', maxWidth: 'none', zIndex: '1' })
     renderer.domElement.addEventListener('webglcontextlost', contextLost)
     container.appendChild(renderer.domElement)
@@ -158,7 +152,21 @@ export async function createLabExperience({ container, mode, reduced = true, sig
       Object.assign(renderer.domElement.style, style)
       if (video) Object.assign(video.style, style)
       renderer.setSize(viewWidth, viewHeight, false)
-      if (mode !== 'ar') { camera.aspect = viewWidth / viewHeight; camera.updateProjectionMatrix() }
+      if (mode !== 'ar') {
+        camera.aspect = viewWidth / viewHeight
+        const center = new THREE.Vector3(0, modelSize.y / 2, 0)
+        const fit = getModelFrame(modelSize, camera.aspect, camera.fov)
+        camera.position.copy(fit.position).add(center)
+        camera.lookAt(center)
+        camera.updateProjectionMatrix()
+        if (controls) {
+          controls.target.copy(center)
+          controls.minDistance = Math.max(0.3, modelSize.length() * 0.3)
+          controls.maxDistance = fit.distance * 4
+          controls.update()
+          controls.saveState()
+        }
+      }
       render()
     }
     resizeObserver = new ResizeObserver(resize)
@@ -193,24 +201,32 @@ export async function createLabExperience({ container, mode, reduced = true, sig
         const { default: toolkit } = await import('@ar-js-org/artoolkit5-js')
         if (lifetime.signal.aborted) throw abortError()
         // Preflight these small local assets: don't feed Vite's HTML fallback to the binary loader.
-        for (const path of [AR_DEMO.cameraParameters, AR_DEMO.markerPattern]) {
+        const patternPaths = [instrument.markerPattern, ...(instrument.id === 'beaker' ? ['/ar/patt.hiro'] : [])]
+        const templates = []
+        for (const path of [instrument.cameraParameters, ...patternPaths]) {
           const response = await fetch(path, { signal: lifetime.signal })
           if (!response.ok || response.headers.get('content-type')?.includes('text/html')) {
-            throw new Error('No se pudo cargar el marcador de la demo. Revisa la conexión y vuelve a intentarlo.')
+            throw new Error('No se pudo cargar el marcador de este instrumento. Revisa la conexión y vuelve a intentarlo.')
           }
-          await response.arrayBuffer()
+          // The historical Hiro template was trained from a grayscale capture,
+          // unlike the exact binary patterns generated for this catalog.
+          if (patternPaths.includes(path)) templates.push(...readPatternTemplates(await response.text(), path === '/ar/patt.hiro' ? 0.6 : 0.7))
+          else await response.arrayBuffer()
         }
-        const next = await toolkit.ARController.initWithDimensions(detectionCanvas.width, detectionCanvas.height, AR_DEMO.cameraParameters)
+        const next = await toolkit.ARController.initWithDimensions(detectionCanvas.width, detectionCanvas.height, instrument.cameraParameters)
         // The library schedules a 'load' event after resolving initialization.
         await new Promise((resolve) => setTimeout(resolve, 5))
         try {
           if (lifetime.signal.aborted) throw abortError()
-          const markerId = await next.loadMarker(AR_DEMO.markerPattern)
+          const markerId = await next.loadMarker(instrument.markerPattern)
+          const markerIds = [markerId]
+          // Preserve previously printed Hiro cards only for the original beaker route.
+          if (instrument.id === 'beaker') markerIds.push(await next.loadMarker('/ar/patt.hiro'))
           if (lifetime.signal.aborted) throw abortError()
-          next.trackPatternMarkerId(markerId, 1)
+          markerIds.forEach(id => next.trackPatternMarkerId(id, 1))
           next.setPatternDetectionMode(next.artoolkit.AR_TEMPLATE_MATCHING_MONO)
           next.setThresholdMode(next.artoolkit.AR_LABELING_THRESH_MODE_AUTO_OTSU)
-          return { tracker: next, markerId }
+          return { tracker: next, markerIds, templates }
         } catch (error) { next.dispose(); throw error }
       })
       trackerQueue = initialization.then(() => {}, () => {})
@@ -226,7 +242,8 @@ export async function createLabExperience({ container, mode, reduced = true, sig
       const rotation = new THREE.Quaternion()
       const scale = new THREE.Vector3()
       controller.addEventListener('getMarker', (event) => {
-        if (event.data.marker.idPatt !== loaded.markerId || event.data.marker.cfPatt < 0.6) return
+        if (!loaded.markerIds.includes(event.data.marker.idPatt) || event.data.marker.cfPatt < 0.6) return
+        if (!matchesMarkerPixels(context, event.data.marker.vertex, loaded.templates)) return
         pose.fromArray(event.data.matrixGL_RH)
         pose.decompose(position, rotation, scale)
         if (anchor.visible) {

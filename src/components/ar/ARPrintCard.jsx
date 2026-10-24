@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { AR_DEMO } from './arDemoConfig'
+import { getARInstrument, instrumentPath } from '../../data/instruments'
+import InstrumentSelector from './InstrumentSelector'
+import { UnknownInstrument } from './ARCatalog'
 import './ARPrintCard.css'
 
-function getPublicDestination(value) {
+function getPublicDestination(value, instrumentId) {
   try {
     const address = new URL(value.trim())
     const hostname = address.hostname.toLowerCase().replace(/\.$/, '')
@@ -18,21 +20,29 @@ function getPublicDestination(value) {
       return null
     }
 
-    // The QR always opens the stable demo route, even if a full page URL was pasted.
-    return `${address.origin}/ar/${AR_DEMO.id}`
+    // The QR always opens the stable instrument route, even if a full page URL was pasted.
+    return `${address.origin}${instrumentPath(instrumentId)}`
   } catch {
     return null
   }
 }
 
 export default function ARPrintCard() {
+  const [params, setParams] = useSearchParams()
   const [publicAddress, setPublicAddress] = useState(() => window.location.origin)
+  const instrument = getARInstrument(params.get('instrumento') || 'beaker')
+  if (!instrument) return <UnknownInstrument />
+  return <PrintInstrumentCard key={instrument.id} instrument={instrument} publicAddress={publicAddress}
+    setPublicAddress={setPublicAddress} onSelect={id => setParams({ instrumento: id })} />
+}
+
+function PrintInstrumentCard({ instrument, publicAddress, setPublicAddress, onSelect }) {
   const [qrCode, setQrCode] = useState(null)
   const [qrLoadedFor, setQrLoadedFor] = useState(null)
   const [qrError, setQrError] = useState(false)
   const [markerLoaded, setMarkerLoaded] = useState(false)
   const [markerError, setMarkerError] = useState(false)
-  const destination = getPublicDestination(publicAddress)
+  const destination = getPublicDestination(publicAddress, instrument.id)
 
   useEffect(() => {
     let cancelled = false
@@ -62,9 +72,9 @@ export default function ARPrintCard() {
   const canPrint = Boolean(destination && currentQr && qrLoadedFor === destination && markerLoaded && !markerError && !qrError)
 
   return (
-    <main className={`ar-print-page${canPrint ? ' ar-print-ready' : ''}`}>
+    <div className={`ar-print-page${canPrint ? ' ar-print-ready' : ''}`}>
       <div className="ar-print-tools">
-        <Link className="ar-print-back" to={`/ar/${AR_DEMO.id}`}>← Volver a la experiencia</Link>
+        <Link className="ar-print-back" to={`/ar/${instrument.id}`}>← Volver a la experiencia</Link>
         <div className="ar-print-heading">
           <div>
             <p className="ar-print-eyebrow">Para tu próximo evento</p>
@@ -77,6 +87,7 @@ export default function ARPrintCard() {
         </div>
 
         <div className="ar-print-config">
+          <InstrumentSelector id="ar-print-instrument" value={instrument.id} onChange={onSelect} />
           <label htmlFor="ar-public-address">Dirección pública de la plataforma</label>
           <input
             id="ar-public-address"
@@ -110,19 +121,20 @@ export default function ARPrintCard() {
               {markerError ? 'No se pudo cargar el marcador. Recarga esta página antes de imprimir.' : 'No se pudo generar o mostrar el QR. Revisa la dirección y vuelve a intentarlo.'}
             </p>
           )}
+          {canPrint && <a className="ar-download-qr" href={currentQr.image} download={`qr-${instrument.id}.svg`}>Descargar solo el QR (SVG)</a>}
         </div>
       </div>
 
       <p className="ar-print-blocked-message">Tarjeta no lista para imprimir. Abre esta página en pantalla, configura una dirección pública HTTPS y espera a que carguen el QR y el marcador.</p>
 
-      <article className="ar-print-card" aria-label={`Tarjeta imprimible: ${AR_DEMO.title}`}>
+      <article className="ar-print-card" aria-label={`Tarjeta imprimible: ${instrument.title}`}>
         <header className="ar-print-card-header">
           <div className="ar-print-brand">Lab<span>Virtual</span><span className="ar-print-brand-dots" aria-hidden="true"><i /><i /><i /></span></div>
-          <span className="ar-print-demo-badge">Demo · modelo simplificado</span>
+          <span className="ar-print-demo-badge">Tarjeta {instrument.markerCode}</span>
         </header>
         <div className="ar-print-card-title">
           <p>Descubre el laboratorio en realidad aumentada</p>
-          <h2>{AR_DEMO.title}</h2>
+          <h2>{instrument.title}</h2>
         </div>
 
         <section className="ar-print-qr-step" aria-labelledby="ar-print-step-one">
@@ -150,11 +162,11 @@ export default function ARPrintCard() {
 
         <section className="ar-print-marker-step" aria-labelledby="ar-print-step-two">
           <h3 id="ar-print-step-two"><span>02</span> Apunta al cuadrado negro</h3>
-          <p>Mantén todo el marcador dentro de la cámara para ver aparecer el modelo sobre esta tarjeta.</p>
+          <p>Encuadra completo el marcador {instrument.markerCode} para ver aparecer {instrument.title.toLowerCase()} sobre esta tarjeta.</p>
           <div className="ar-print-marker">
             <img
-              src={AR_DEMO.markerImage}
-              alt="Marcador Hiro: cuadrado negro que la cámara debe reconocer completo"
+              src={instrument.markerImage}
+              alt={`Marcador ${instrument.markerCode}: ${instrument.title}`}
               width="512"
               height="512"
               onLoad={() => { setMarkerLoaded(true); setMarkerError(false) }}
@@ -166,7 +178,7 @@ export default function ARPrintCard() {
 
         <aside className="ar-print-fact">
           <span aria-hidden="true">¿Sabías que…?</span>
-          <p>El vaso de precipitados permite contener y mezclar líquidos. Sus marcas de volumen son aproximadas; para medir con precisión se usan otros instrumentos.</p>
+          <p>{instrument.description} {instrument.use}</p>
         </aside>
         <footer className="ar-print-card-footer">
           <span>Explora · observa · aprende</span>
@@ -183,6 +195,6 @@ export default function ARPrintCard() {
           <li>Prueba el QR impreso y la cámara en un celular. Si el equipo no puede usar AR, la experiencia ofrece una vista alternativa.</li>
         </ul>
       </aside>
-    </main>
+    </div>
   )
 }

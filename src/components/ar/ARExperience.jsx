@@ -1,34 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import usePerformanceProfile from '../../hooks/usePerformanceProfile'
-import { AR_DEMO } from './arDemoConfig'
+import { getARInstrument, instrumentPath, cardPath } from '../../data/instruments'
+import InstrumentSelector from './InstrumentSelector'
+import { UnknownInstrument } from './ARCatalog'
 import './ARExperience.css'
 
 function CameraIcon() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 5l1-2h6l1 2h3a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" /><circle cx="12" cy="12" r="4" /></svg>
 }
 
-function BeakerIllustration() {
-  return (
-    <svg className="ar-demo-illustration" viewBox="0 0 320 280" fill="none" aria-hidden="true">
-      <ellipse cx="158" cy="246" rx="93" ry="14" fill="#d2e8de" />
-      <path d="M51 219l109-27 111 26-111 34z" fill="white" stroke="#bedbce" strokeWidth="2" />
-      <path d="M85 219l75-18 77 17-77 23z" fill="#183b3a" />
-      <path d="M116 218l44-10 44 10-44 13z" fill="white" />
-      <path d="M99 68h119l-16 20v128c0 17-101 17-101 0V88z" fill="#f7fffc" stroke="#218c68" strokeWidth="4" strokeLinejoin="round" />
-      <path d="M104 153c27 12 67-13 95 0v62c0 13-95 13-95 0z" fill="#a6deca" />
-      <path d="M105 153c25 11 67-12 93 0" stroke="#218c68" strokeWidth="2" />
-      <path d="M112 79h85M172 106h20m-12 17h12m-20 17h20m-12 17h12m-20 17h20m-12 17h12" stroke="#3974d8" strokeWidth="3" strokeLinecap="round" />
-      <path d="M117 102v91" stroke="white" strokeWidth="7" strokeLinecap="round" />
-      <circle cx="242" cy="78" r="22" fill="#fff0e5" />
-      <path d="M234 78h16m-8-8v16" stroke="#b84d1e" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="70" cy="115" r="8" fill="#e8f1ff" />
-      <path d="M63 55h13m-6-6v12" stroke="#3974d8" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
+export default function ARExperience() {
+  const { instrumentId } = useParams()
+  const instrument = getARInstrument(instrumentId)
+  if (!instrument) return <UnknownInstrument />
+  // A route change unmounts the previous camera/model before starting another.
+  return <InstrumentExperience key={instrument.id} instrument={instrument} />
 }
 
-export default function ARExperience() {
+function InstrumentExperience({ instrument }) {
+  const navigate = useNavigate()
   const { profile } = usePerformanceProfile()
   const containerRef = useRef(null)
   const experienceRef = useRef(null)
@@ -93,6 +84,7 @@ export default function ARExperience() {
       const experience = await createLabExperience({
         container: containerRef.current,
         mode: nextMode,
+        instrument,
         reduced: profile === 'reduced',
         signal: controller.signal,
         onStatus: (nextStatus) => {
@@ -127,29 +119,30 @@ export default function ARExperience() {
           : status === 'lost'
             ? 'Vuelve a encuadrar la tarjeta'
             : status === 'searching'
-              ? 'Buscando el marcador Hiro'
+              ? `Buscando tarjeta ${instrument.markerCode}`
               : 'Listo para explorar'
 
   return (
-    <main className="ar-demo-page">
+    <div className="ar-demo-page">
       <header className="ar-demo-header">
-        <Link to="/modulo/1" className="ar-demo-back"><span aria-hidden="true">←</span> Laboratorio</Link>
+        <Link to="/ar" className="ar-demo-back"><span aria-hidden="true">←</span> Catálogo</Link>
         <span className="ar-demo-header-label">LabVirtual <span aria-hidden="true">/</span> Realidad aumentada</span>
-        <Link to="/ar/tarjeta" className="ar-demo-card-link">Obtener tarjeta <span aria-hidden="true">↗</span></Link>
+        <Link to={cardPath(instrument.id)} className="ar-demo-card-link">Obtener tarjeta <span aria-hidden="true">↗</span></Link>
       </header>
 
       <div className="ar-demo-content">
         <div className="ar-demo-heading">
-          <span className="ar-demo-eyebrow"><span aria-hidden="true">✦</span> DEMO · APRENDE EN TU ESPACIO</span>
+          <span className="ar-demo-eyebrow"><span aria-hidden="true">✦</span> APRENDE EN TU ESPACIO</span>
           <h1>El laboratorio llega a <span>tu mesa.</span></h1>
           <p>Apunta a la tarjeta y descubre un instrumento sobre ella. Acércate, cambia su tamaño y observa sus detalles.</p>
         </div>
 
+        <InstrumentSelector id="ar-experience-instrument" value={instrument.id} onChange={id => navigate(instrumentPath(id))} />
         <div className="ar-demo-layout">
           <section className="ar-demo-viewer" aria-label="Explorador del instrumento">
             <div className={`ar-demo-stage ${mode === 'ar' ? 'ar-demo-stage-camera' : ''}`}>
-              <div ref={containerRef} className="ar-demo-runtime" role="img" aria-label={mode === 'ar' ? 'Modelo 3D sobre la imagen de tu cámara' : 'Modelo tridimensional del vaso de precipitados'} />
-              {showIllustration && <div className="ar-demo-stage-intro"><BeakerIllustration /><span>Una tarjeta. Un nuevo descubrimiento.</span></div>}
+              <div ref={containerRef} className="ar-demo-runtime" role="img" aria-label={mode === 'ar' ? 'Modelo 3D sobre la imagen de tu cámara' : `Modelo tridimensional: ${instrument.title}`} />
+              {showIllustration && <div className="ar-demo-stage-intro"><img className="ar-selected-marker" src={instrument.markerImage} alt={`Marcador ${instrument.markerCode} de ${instrument.title}`} /><span>{instrument.markerCode} · {instrument.title}</span></div>}
               <div className={`ar-demo-status ${status === 'found' ? 'ar-demo-status-found' : ''}`} role="status" aria-live="polite">
                 <span className="ar-demo-status-dot" aria-hidden="true" />{statusText}
               </div>
@@ -160,7 +153,7 @@ export default function ARExperience() {
                 </div>
               )}
               {mode && <button type="button" className="ar-demo-stop" onClick={() => stopExperience()} aria-label={mode === 'ar' ? 'Cerrar experiencia y apagar cámara' : 'Cerrar vista 3D'}>✕ <span>Cerrar</span></button>}
-              <span className="ar-demo-stage-caption">{AR_DEMO.title}</span>
+              <span className="ar-demo-stage-caption">{instrument.title}</span>
             </div>
 
             {ready && (
@@ -188,7 +181,7 @@ export default function ARExperience() {
             </div>
             {error && <p className="ar-demo-message ar-demo-message-error" role="alert">{error}</p>}
             {status === 'paused' && <p className="ar-demo-message">Pausamos la experiencia al salir de esta pestaña. Usa los botones para volver a iniciarla.</p>}
-            <p className="ar-demo-privacy">La cámara se activa solo cuando tú lo decides. Este demo no graba ni envía imágenes de tu cámara.</p>
+            <p className="ar-demo-privacy">La cámara se activa solo cuando tú lo decides. Esta experiencia no graba ni envía imágenes de tu cámara.</p>
           </section>
 
           <aside className="ar-demo-guide" aria-label="Guía de la experiencia">
@@ -196,22 +189,22 @@ export default function ARExperience() {
               <span className="ar-demo-guide-kicker">DE LA TARJETA A TU MESA</span>
               <h2>Prueba la magia de la ciencia</h2>
               <ol className="ar-demo-steps">
-                <li><span className="ar-demo-step-number">01</span><div><h3>Prepara la tarjeta</h3><p>Usa la impresión con el marcador Hiro. El QR abre esta página; el cuadro negro coloca el modelo.</p></div></li>
+                <li><span className="ar-demo-step-number">01</span><div><h3>Prepara la tarjeta</h3><p>Usa la tarjeta {instrument.markerCode} de {instrument.title.toLowerCase()}. El QR abre esta página; su marcador coloca el modelo.</p></div></li>
                 <li><span className="ar-demo-step-number">02</span><div><h3>Apunta con tu cámara</h3><p>Actívala, acepta el permiso y encuadra el marcador completo sobre una superficie plana.</p></div></li>
                 <li><span className="ar-demo-step-number">03</span><div><h3>Observa y explora</h3><p>Mueve el teléfono alrededor de la tarjeta. Usa los controles para girar y cambiar el tamaño del instrumento.</p></div></li>
               </ol>
-              <Link to="/ar/tarjeta" className="ar-demo-print-link">Ver tarjeta para imprimir <span aria-hidden="true">→</span></Link>
+              <Link to={cardPath(instrument.id)} className="ar-demo-print-link">Ver tarjeta para imprimir <span aria-hidden="true">→</span></Link>
             </div>
 
             <details className="ar-demo-info" open>
               <summary><span><span className="ar-demo-info-icon" aria-hidden="true">i</span>Conoce el instrumento</span><span className="ar-demo-info-chevron" aria-hidden="true">⌄</span></summary>
-              <div className="ar-demo-info-body"><h2>{AR_DEMO.title}</h2><p>{AR_DEMO.description}</p><p><strong>En el laboratorio:</strong> {AR_DEMO.use}</p><p className="ar-demo-think">Observa sus marcas: ¿servirá para medir un volumen con mucha precisión?</p><p className="ar-demo-disclaimer">Representación simplificada para este demo. Su tamaño en pantalla no es una referencia de medida real.</p></div>
+              <div className="ar-demo-info-body"><h2>{instrument.title}</h2><p>{instrument.description}</p><p><strong>En el laboratorio:</strong> {instrument.use}</p><p className="ar-demo-think">{instrument.question}</p><p className="ar-demo-disclaimer">Modelo de la entrega final, sin reproducción de animaciones. El tamaño mostrado es ilustrativo, no una medida real.</p></div>
             </details>
             <p className="ar-demo-tip">Si tu tarjeta está enmicada, inclínala un poco para evitar el brillo. También puedes probar la vista 3D sin cámara.</p>
           </aside>
         </div>
         <footer className="ar-demo-footer">Explora a tu ritmo <span aria-hidden="true">·</span> Sin instalar una app</footer>
       </div>
-    </main>
+    </div>
   )
 }

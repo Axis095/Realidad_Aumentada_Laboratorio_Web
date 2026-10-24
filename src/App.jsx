@@ -9,10 +9,11 @@ const Modulo2 = lazy(() => import('./components/canvas/Modulo2'))
 const Modulo3 = lazy(() => import('./components/canvas/Modulo3'))
 const ARExperience = lazy(() => import('./components/ar/ARExperience'))
 const ARPrintCard = lazy(() => import('./components/ar/ARPrintCard'))
+const ARCatalog = lazy(() => import('./components/ar/ARCatalog'))
 
 export default function App() {
   const { pathname } = useLocation()
-  const isAR = pathname === '/ar/beaker' || pathname === '/ar/tarjeta'
+  const isAR = pathname === '/ar' || pathname.startsWith('/ar/')
   return (
     <div className="app-shell">
       {!isAR && <Navbar />}
@@ -23,7 +24,8 @@ export default function App() {
             <Route path="/modulo/1" element={<Modulo1 />} />
             <Route path="/modulo/2" element={<Modulo2 />} />
             <Route path="/modulo/3" element={<Modulo3 />} />
-            <Route path="/ar/beaker" element={<ARExperience />} />
+            <Route path="/ar" element={<ARCatalog />} />
+            <Route path="/ar/:instrumentId" element={<ARExperience />} />
             <Route path="/ar/tarjeta" element={<ARPrintCard />} />
           </Routes>
         </Suspense>

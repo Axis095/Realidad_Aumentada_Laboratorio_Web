@@ -1,58 +1,5 @@
 import { expect, test } from '@playwright/test'
-
-// Feed the actual marker detector a synthetic video stream. No browser camera
-// permission is granted and the native getUserMedia is never invoked.
-async function installCamera(page, { denied = false, deferred = false } = {}) {
-  await page.addInitScript(({ denied, deferred }) => {
-    const camera = { calls: 0, tracks: [], showMarker: true, release: null }
-    window.__arTestCamera = camera
-    const mediaDevices = navigator.mediaDevices || {}
-    if (!navigator.mediaDevices) Object.defineProperty(navigator, 'mediaDevices', { value: mediaDevices })
-    Object.defineProperty(mediaDevices, 'getUserMedia', {
-      configurable: true,
-      value: async () => {
-        camera.calls += 1
-        if (denied) throw new DOMException('Permiso de cámara denegado en la prueba', 'NotAllowedError')
-        const canvas = document.createElement('canvas')
-        canvas.width = 640
-        canvas.height = 480
-        const context = canvas.getContext('2d')
-        const marker = new Image()
-        marker.src = '/ar/hiro.png'
-        await marker.decode()
-        const draw = () => {
-          context.fillStyle = '#fff'
-          context.fillRect(0, 0, 640, 480)
-          if (camera.showMarker) context.drawImage(marker, 140, 60, 360, 360)
-        }
-        draw()
-        const timer = setInterval(draw, 50)
-        const stream = canvas.captureStream(20)
-        for (const track of stream.getTracks()) {
-          const stop = track.stop.bind(track)
-          track.stop = () => { clearInterval(timer); stop() }
-          camera.tracks.push(track)
-        }
-        if (deferred) await new Promise(resolve => { camera.release = resolve })
-        return stream
-      },
-    })
-  }, { denied, deferred })
-}
-
-async function expectStopped(page) {
-  await expect.poll(() => page.evaluate(() => ({
-    count: window.__arTestCamera.tracks.length,
-    stopped: window.__arTestCamera.tracks.every(track => track.readyState === 'ended'),
-  }))).toEqual(expect.objectContaining({ stopped: true }))
-  await expect(page.locator('.ar-demo-runtime video')).toHaveCount(0)
-}
-
-async function startAR(page) {
-  await page.getByRole('button', { name: 'Activar cámara', exact: true }).click()
-  await expect(page.locator('.ar-demo-status')).toHaveText('Tarjeta detectada')
-  await expect(page.locator('.ar-demo-runtime canvas')).toHaveCount(1)
-}
+import { installCamera, expectStopped, startAR } from './cameraHelpers'
 
 for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 1366, height: 900 }]) {
   test(`landing is lightweight and fits ${viewport.width}px`, async ({ page }) => {
@@ -119,6 +66,12 @@ test('actual tracker finds and loses Hiro, and stops camera on mode switch and c
   await page.goto('/ar/beaker')
   await startAR(page)
   await page.screenshot({ path: testInfo.outputPath('hiro-detected.png'), fullPage: true })
+  for (const rotation of [1, 2, 3, 0]) {
+    await page.evaluate(r => { window.__arTestCamera.rotation = r; window.__arTestCamera.showMarker = false }, rotation)
+    await expect(page.locator('.ar-demo-status')).toHaveText('Vuelve a encuadrar la tarjeta')
+    await page.evaluate(() => { window.__arTestCamera.showMarker = true })
+    await expect(page.locator('.ar-demo-status')).toHaveText('Tarjeta detectada')
+  }
   await page.evaluate(() => { window.__arTestCamera.showMarker = false })
   await expect(page.locator('.ar-demo-status')).toHaveText('Vuelve a encuadrar la tarjeta')
   await page.evaluate(() => { window.__arTestCamera.showMarker = true })
@@ -146,7 +99,7 @@ test('hiding the page and leaving its route release every camera track', async (
   await page.evaluate(() => { delete document.hidden })
   await startAR(page)
   await page.getByRole('link', { name: 'Obtener tarjeta' }).click()
-  await expect(page).toHaveURL(/\/ar\/tarjeta$/)
+  await expect(page).toHaveURL(/\/ar\/tarjeta\?instrumento=beaker$/)
   await expectStopped(page)
 })
 
@@ -185,7 +138,7 @@ test('print card refuses local URLs and generates its QR for the stable public r
   await page.emulateMedia({ media: 'print' })
   await expect(page.locator('.ar-print-tools').first()).toBeHidden()
   await expect(page.locator('.ar-print-card')).toBeVisible()
-  await expect(page.getByRole('img', { name: /Marcador Hiro/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Marcador LAB-01/ })).toBeVisible()
   const printable = await page.pdf({ path: testInfo.outputPath('card-print.pdf'), format: 'A4', preferCSSPageSize: true, printBackground: true })
   expect(printable.toString('latin1').match(/\/Type \/Page\b/g)).toHaveLength(1)
   expect(await page.evaluate(() => window.__arTestCamera.calls)).toBe(0)

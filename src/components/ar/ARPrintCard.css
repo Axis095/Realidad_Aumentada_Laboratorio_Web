@@ -24,6 +24,7 @@
 .ar-print-status a { color: inherit; font-weight: 900; }
 .ar-print-status-warning { background: var(--clr-orange-soft); color: #8d411d; }
 .ar-print-blocked-message { display: none; }
+.ar-download-qr { display:inline-flex; align-items:center; min-height:44px; margin-top:10px; color:var(--clr-green-dark); font-weight:800; font-size:.85rem; }
 
 .ar-print-card { max-width: 760px; margin: 0 auto; padding: 30px; background: #fff; border: 1px solid var(--clr-border); border-top: 5px solid var(--clr-green); border-radius: 20px; box-shadow: var(--shadow-soft); }
 .ar-print-card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }

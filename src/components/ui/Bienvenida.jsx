@@ -53,8 +53,8 @@ export default function Bienvenida() {
           <Link to="/modulo/2" className="btn-secondary">
             Ver reacción química
           </Link>
-          <Link to="/ar/beaker" className="btn-secondary">
-            Probar tarjeta en realidad aumentada
+          <Link to="/ar" className="btn-secondary">
+            Explorar catálogo de realidad aumentada
           </Link>
         </div>
       </section>
