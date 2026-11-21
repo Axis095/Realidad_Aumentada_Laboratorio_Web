@@ -64,7 +64,7 @@ export async function loadARModel(instrument, signal, reduced) {
         material.needsUpdate = true
       }
     }
-    return { object: normalized, size: size.multiplyScalar(factor) }
+    return { object: normalized, size: size.multiplyScalar(factor), byteLength: bytes.byteLength }
   } catch (error) {
     if (gltf) {
       const allScenes = new Group()

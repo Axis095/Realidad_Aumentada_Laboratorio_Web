@@ -9,6 +9,7 @@
         "preview": "vite preview",
         "test:ar": "playwright test",
         "test:models": "playwright test --config playwright.models.config.js",
+        "test:process": "playwright test --config playwright.process.config.js",
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {

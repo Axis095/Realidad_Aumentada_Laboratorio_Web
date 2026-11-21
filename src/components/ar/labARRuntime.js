@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadARModel, releaseARModel } from './loadARModel'
 import { getModelFrame } from '../../utils/modelFraming'
 import { matchesMarkerPixels, readPatternTemplates } from './verifyMarkerPattern'
+import { createARMeasurements } from './arMeasurements'
 
 const abortError = () => new DOMException('Experiencia cancelada', 'AbortError')
 // ARToolkit uses shared WASM state while constructing controllers. Serialize startup/teardown.
@@ -40,12 +41,35 @@ function cameraError(error) {
 }
 
 
-export async function createLabExperience({ container, mode, instrument, reduced = true, signal, onStatus = () => {}, onError = () => {} }) {
+export async function createLabExperience({ container, mode, instrument, reduced = true, signal, onStatus = () => {}, onError = () => {}, diagnosticsEnabled = false, onDiagnosticsReady = () => {}, startedAt = performance.now() }) {
   const lifetime = new AbortController()
   let disposed = false
   let stream, video, renderer, controller, controls, resizeObserver
   let frame = 0
   let initTimer
+  const measurements = createARMeasurements()
+  let diagnosticsRequested = diagnosticsEnabled
+  const diagnostics = {
+    mode, profile: reduced ? 'reduced' : 'full',
+    targetTrackingFps: mode === 'ar' ? (reduced ? 15 : 24) : null,
+    trackingResolution: mode === 'ar' ? (reduced ? '480 × 360' : '640 × 480') : null,
+    cameraResolution: null, cameraRequestedFps: mode === 'ar' ? (reduced ? 20 : 30) : null,
+    cameraConfiguredFps: null, cameraStartMs: null, modelLoadMs: null,
+    readyMs: null, modelBytes: null, error: null,
+  }
+  let finalDiagnostics = null
+  const getDiagnostics = () => finalDiagnostics || {
+    ...diagnostics,
+    running: !disposed,
+    tracking: measurements.snapshot(),
+    renderResolution: renderer ? `${renderer.domElement.width} × ${renderer.domElement.height}` : null,
+    pixelRatio: renderer?.getPixelRatio() ?? null,
+    // Counts for the last rendered frame; not total model complexity or GPU RAM.
+    drawCalls: renderer?.info.render.calls ?? null,
+    triangles: renderer?.info.render.triangles ?? null,
+    geometries: renderer?.info.memory.geometries ?? null,
+    textures: renderer?.info.memory.textures ?? null,
+  }
   const scene = new THREE.Scene()
   const camera = mode === 'ar' ? new THREE.Camera() : new THREE.PerspectiveCamera(40, 1, 0.01, 100)
   const anchor = new THREE.Group()
@@ -63,6 +87,8 @@ export async function createLabExperience({ container, mode, instrument, reduced
 
   const dispose = () => {
     if (disposed) return
+    finalDiagnostics = { ...getDiagnostics(), running: false }
+    measurements.setEnabled(false)
     disposed = true
     lifetime.abort()
     signal?.removeEventListener('abort', dispose)
@@ -80,8 +106,10 @@ export async function createLabExperience({ container, mode, instrument, reduced
       renderer.forceContextLoss()
       renderer.domElement.remove()
     }
+    // The diagnostic handle retains only its frozen numbers after closing.
+    stream = video = renderer = controls = resizeObserver = null
   }
-  const fail = (error) => { if (!disposed) { dispose(); onError(error) } }
+  const fail = (error) => { if (!disposed) { diagnostics.error = error.message; dispose(); onError(error) } }
   const contextLost = (event) => {
     event.preventDefault()
     fail(new Error('Se interrumpió la vista 3D. Cierra otras aplicaciones e inicia de nuevo la experiencia.'))
@@ -89,10 +117,18 @@ export async function createLabExperience({ container, mode, instrument, reduced
   const render = () => { if (!disposed && renderer) renderer.render(scene, camera) }
 
   signal?.addEventListener('abort', dispose, { once: true })
+  onDiagnosticsReady({
+    getSnapshot: getDiagnostics,
+    setEnabled(value) {
+      diagnosticsRequested = Boolean(value)
+      if (!disposed && diagnostics.readyMs !== null) measurements.setEnabled(diagnosticsRequested && mode === 'ar')
+    },
+  })
   try {
     if (signal?.aborted) { dispose(); throw abortError() }
     status('loading')
     if (mode === 'ar') {
+      const cameraStartedAt = performance.now()
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
         throw new Error('La cámara necesita una dirección HTTPS. Abre la versión publicada o explora sin cámara.')
       }
@@ -121,10 +157,17 @@ export async function createLabExperience({ container, mode, instrument, reduced
       container.appendChild(video)
       await waitFor(video.play(), lifetime.signal)
       if (lifetime.signal.aborted) throw abortError()
+      diagnostics.cameraStartMs = Math.round(performance.now() - cameraStartedAt)
+      const settings = stream.getVideoTracks()[0]?.getSettings?.() || {}
+      diagnostics.cameraResolution = `${video.videoWidth} × ${video.videoHeight}`
+      diagnostics.cameraConfiguredFps = settings.frameRate ?? null
     }
 
     initTimer = setTimeout(() => fail(new Error('La carga del modelo tardó demasiado. Comprueba la conexión y vuelve a intentarlo.')), 30000)
+    const modelStartedAt = performance.now()
     const asset = await waitFor(loadARModel(instrument, lifetime.signal, reduced), lifetime.signal, ({ object }) => releaseARModel(object))
+    diagnostics.modelLoadMs = Math.round(performance.now() - modelStartedAt)
+    diagnostics.modelBytes = asset.byteLength
     model.add(asset.object)
     modelSize = asset.size
     clearTimeout(initTimer)
@@ -264,6 +307,7 @@ export async function createLabExperience({ container, mode, instrument, reduced
         frame = requestAnimationFrame(tick)
         if (now - lastFrame < interval || video.readyState < 2) return
         lastFrame = now
+        const measurementStart = measurements.begin()
         // Match object-fit: cover on the displayed video, including portrait camera streams.
         const ratio = Math.max(detectionCanvas.width / video.videoWidth, detectionCanvas.height / video.videoHeight)
         const width = video.videoWidth * ratio
@@ -276,6 +320,7 @@ export async function createLabExperience({ container, mode, instrument, reduced
           if (detected) everFound = true
           status(detected ? 'found' : everFound ? 'lost' : 'searching')
           render()
+          measurements.end(measurementStart, detected)
         } catch { fail(new Error('Se interrumpió el seguimiento. Vuelve a iniciar la cámara o explora sin cámara.')) }
       }
       resize()
@@ -283,6 +328,8 @@ export async function createLabExperience({ container, mode, instrument, reduced
       frame = requestAnimationFrame(tick)
     }
 
+    diagnostics.readyMs = Math.round(performance.now() - startedAt)
+    measurements.setEnabled(diagnosticsRequested && mode === 'ar')
     return {
       dispose,
       rotate(direction) { if (!disposed) { model.rotateY(Math.sign(direction) * Math.PI / 8); render() } },
@@ -296,6 +343,7 @@ export async function createLabExperience({ container, mode, instrument, reduced
       },
     }
   } catch (error) {
+    if (error.name !== 'AbortError') diagnostics.error = error.message
     dispose()
     throw error
   }

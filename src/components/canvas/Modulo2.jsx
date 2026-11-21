@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { animate, stagger } from 'animejs'
 import ModuloBase from './ModuloBase'
 import SequenceChallenge from './SequenceChallenge'
+import ProcessPrototype from './ProcessPrototype'
 import useLabStore from '../../store/Uselabstore'
 import './ModuloBase.css'
 import './Aprendizaje.css'
@@ -205,6 +206,8 @@ export default function Modulo2() {
             <div className="stage-metric"><span>Cambio clave</span><strong>{step.metric}</strong></div>
           </article>
         </div>
+
+        <ProcessPrototype />
 
         <SequenceChallenge completed={sequenceCompleted} onComplete={completeSequence} />
 

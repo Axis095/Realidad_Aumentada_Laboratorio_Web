@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import usePerformanceProfile from '../../hooks/usePerformanceProfile'
 import { getARInstrument, instrumentPath, cardPath } from '../../data/instruments'
 import InstrumentSelector from './InstrumentSelector'
+import ARDiagnostics from './ARDiagnostics'
 import { UnknownInstrument } from './ARCatalog'
 import './ARExperience.css'
 
@@ -25,6 +26,8 @@ function InstrumentExperience({ instrument }) {
   const experienceRef = useRef(null)
   const requestRef = useRef(null)
   const modeRef = useRef(null)
+  const diagnosticsRef = useRef(null)
+  const diagnosticsEnabledRef = useRef(false)
   const [mode, setMode] = useState(null)
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
@@ -59,7 +62,9 @@ function InstrumentExperience({ instrument }) {
   }, [disposeExperience, stopExperience])
 
   async function startExperience(nextMode) {
+    const startedAt = performance.now()
     disposeExperience()
+    diagnosticsRef.current = null
     const controller = new AbortController()
     requestRef.current = controller
     modeRef.current = nextMode
@@ -85,12 +90,17 @@ function InstrumentExperience({ instrument }) {
         container: containerRef.current,
         mode: nextMode,
         instrument,
+        startedAt,
         reduced: profile === 'reduced',
         signal: controller.signal,
         onStatus: (nextStatus) => {
           if (!controller.signal.aborted) setStatus(nextStatus)
         },
         onError: reportFailure,
+        diagnosticsEnabled: diagnosticsEnabledRef.current,
+        onDiagnosticsReady: (handle) => {
+          if (!controller.signal.aborted) diagnosticsRef.current = handle
+        },
       })
       if (controller.signal.aborted) {
         experience.dispose()
@@ -182,6 +192,7 @@ function InstrumentExperience({ instrument }) {
             {error && <p className="ar-demo-message ar-demo-message-error" role="alert">{error}</p>}
             {status === 'paused' && <p className="ar-demo-message">Pausamos la experiencia al salir de esta pestaña. Usa los botones para volver a iniciarla.</p>}
             <p className="ar-demo-privacy">La cámara se activa solo cuando tú lo decides. Esta experiencia no graba ni envía imágenes de tu cámara.</p>
+            <ARDiagnostics instrument={instrument} profile={profile} status={status} error={error} diagnosticsRef={diagnosticsRef} enabledRef={diagnosticsEnabledRef} />
           </section>
 
           <aside className="ar-demo-guide" aria-label="Guía de la experiencia">
