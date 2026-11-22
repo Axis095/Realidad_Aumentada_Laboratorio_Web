@@ -47,6 +47,8 @@ Implementación y límites:
 - Un solo canvas para las tres escenas; hasta 20 FPS/DPR 1 en Ligero y 30 FPS/DPR
   máximo 1,35 en Completo. En pausa solo redibuja por una acción o un cambio de
   tamaño. No hay reproducción automática, incluso con movimiento reducido.
+- El limitador conserva la cadencia aunque un callback llegue tarde. Omite
+  intervalos perdidos sin acumular retrasos ni dibujar ráfagas para recuperarlos.
 - Salir de la pestaña o dejar el panel fuera de pantalla pausa sin reanudar solo.
   Cerrar, cambiar de módulo o fallar libera recursos y cancela descargas. Errores
   de modelo/WebGL permiten reintentar o continuar con la explicación sin 3D.
@@ -60,13 +62,22 @@ pausa/reinicio/avance, fin de reproducción, perfiles, anchos 320/390/1366 px,
 cancelación, recuperación y ausencia de renders continuos en pausa. No sustituyen
 la comprobación de fluidez y temperatura en un teléfono físico.
 
-### Diagnóstico del prototipo
+### Prueba de rendimiento del prototipo
 
-Debajo de los controles, abre **Diagnóstico del prototipo**, abre el visor y
-reproduce una escena al menos dos segundos. Puedes pausarla antes de pulsar
-**Copiar informe del prototipo**. Indica opcionalmente el teléfono y pega el
-informe en el chat junto con lo que observaste. Repite en Llenado, Vertido y
-Agitación; compara Ligero y Completo sin confundir sus límites de 20/30 FPS.
+Debajo de los controles, abre **Prueba de rendimiento**, abre el visor y
+reproduce una escena con el panel abierto. Espera a que aparezca **Resultado
+disponible** (al menos dos segundos de reproducción); preferiblemente deja
+terminar la escena y pulsa **Copiar resultado**. Indica opcionalmente el teléfono.
+Repite en Llenado, Vertido y Agitación; compara Ligero y Completo sin confundir
+sus límites de 20/30 FPS. El panel indica la duración de la última muestra:
+los valores no son un promedio de toda la escena.
+
+No se puede exportar un resultado sin fotogramas medidos. Si ocurre un fallo,
+**Copiar informe de error** permite exportarlo aunque no haya FPS. El formato
+`diagnosticVersion: 2` identifica `resultType: measurement` o `error`. La copia
+visible se retira cuando cambia la muestra o el estado de la prueba, para evitar
+confundirla con un resultado nuevo; el contenido ya copiado al portapapeles no
+se actualiza automáticamente.
 
 El panel está cerrado por defecto, no inicia el 3D y solo sondea una vez por
 segundo cuando está abierto y la pestaña visible. No añade renders. Cuenta
@@ -141,7 +152,7 @@ En cada visor `/ar/:instrumento`, abre **Diagnóstico de rendimiento**, debajo
 de los botones de cámara. Está cerrado por defecto y no activa la cámara ni
 descarga modelos. Abre el panel, activa la experiencia, encuadra la tarjeta y
 espera unos segundos. Indica opcionalmente el teléfono y pulsa **Copiar informe
-de diagnóstico**. Puedes pegar el texto en el chat; si el navegador bloquea el
+de diagnóstico**. Si el navegador bloquea el
 portapapeles, selecciona el informe visible y cópialo manualmente.
 
 - Solo mide continuamente con el panel abierto y la pestaña visible; actualiza

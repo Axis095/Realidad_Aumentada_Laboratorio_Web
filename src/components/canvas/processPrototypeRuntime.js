@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { getModelFrame } from '../../utils/modelFraming'
 import { getProcessPose, PROCESS_SCENES } from './processPrototypeState'
 import { createProcessMeasurements } from './processMeasurements'
+import { createProcessFrameLimiter } from './processFrameLimiter'
 
 const abortError = () => new DOMException('Prototipo cancelado', 'AbortError')
 
@@ -28,8 +29,9 @@ export async function createProcessPrototype({ container, signal, reduced = true
   const scene = new THREE.Scene()
   const assets = new THREE.Group()
   let renderer, observer, timer, failure, frame = 0, disposed = false
-  let playing = false, progress = 0, sceneId = 'fill', lastTime = 0, lastRender = 0, lastReport = 0
+  let playing = false, progress = 0, sceneId = 'fill', lastTime = 0, lastReport = 0
   let qualityReduced = reduced
+  const frameLimiter = createProcessFrameLimiter(reduced ? 20 : 30)
   let renderCount = 0
   const measurements = createProcessMeasurements()
   measurements.setEnabled(diagnosticsEnabled)
@@ -227,9 +229,8 @@ export async function createProcessPrototype({ container, signal, reduced = true
       if (!playing || disposed) return
       progress = Math.min(1, progress + Math.min((now - lastTime) / 1000, 0.1) / PROCESS_SCENES.find(item => item.id === sceneId).duration)
       lastTime = now
-      if (now - lastRender >= 1000 / (qualityReduced ? 20 : 30) || progress >= 1) {
+      if (frameLimiter.shouldRender(now) || progress >= 1) {
         render(true)
-        lastRender = now
       }
       if (progress >= 1) cancelPlayback()
       if (now - lastReport >= 250 || !playing) { publish(); lastReport = now }
@@ -248,7 +249,8 @@ export async function createProcessPrototype({ container, signal, reduced = true
         playing = true
         measurements.setPlaying(true)
         lastTime = performance.now()
-        lastRender = lastReport = 0
+        frameLimiter.reset(lastTime, qualityReduced ? 20 : 30)
+        lastReport = 0
         publish()
         frame = requestAnimationFrame(tick)
       },
@@ -261,7 +263,10 @@ export async function createProcessPrototype({ container, signal, reduced = true
       },
       setQuality(value) {
         if (disposed) return
-        if (qualityReduced !== value) measurements.reset()
+        if (qualityReduced !== value) {
+          measurements.reset()
+          frameLimiter.reset(performance.now(), value ? 20 : 30)
+        }
         qualityReduced = value
         renderer.setPixelRatio(value ? 1 : Math.min(devicePixelRatio || 1, 1.35))
         resize()

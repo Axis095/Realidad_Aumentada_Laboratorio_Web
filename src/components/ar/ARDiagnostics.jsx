@@ -61,7 +61,7 @@ export default function ARDiagnostics({ instrument, profile, status, error, diag
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable')
       await navigator.clipboard.writeText(text)
-      if (mounted.current) setCopyStatus('Informe copiado. Puedes pegarlo en el chat.')
+      if (mounted.current) setCopyStatus('Informe copiado al portapapeles.')
     } catch {
       if (mounted.current) setCopyStatus('No se pudo copiar automáticamente. Selecciona y copia el texto de abajo.')
     }

@@ -11,6 +11,8 @@
 .ar-diagnostics-body textarea { margin-top: 6px; resize: vertical; }
 .ar-diagnostics-body input { min-height: 44px; margin: 6px 0 10px; }
 .ar-diagnostics-body button { min-height: 44px; width: 100%; padding: 10px; border: 1px solid var(--clr-border); border-radius: 10px; background: var(--clr-blue-soft); color: var(--clr-blue-dark); font: inherit; font-weight: 800; cursor: pointer; }
+.ar-diagnostics-body button:disabled { opacity: .6; cursor: not-allowed; }
+.ar-diagnostics-body .process-test-guidance { padding: 10px; border-left: 3px solid var(--clr-green-dark); border-radius: 4px; background: #e8f3ed; color: var(--clr-green-dark); font-weight: 700; }
 .ar-diagnostics :focus-visible { outline: 3px solid var(--clr-blue); outline-offset: 2px; }
 .ar-diagnostics-body .ar-diagnostics-error { color: #873c1b; }
 @media print { .ar-diagnostics { display: none; } }
