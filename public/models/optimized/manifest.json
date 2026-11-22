@@ -1,0 +1,34 @@
+[
+  {
+    "source": "molecules/HidroxidoDeSodio.glb",
+    "output": "naoh.glb",
+    "sourceSha256": "a5d9c6e0abeb8f67003462b5ac42e1aff79ec396c2d9f0324642987df22ef267",
+    "outputSha256": "ac8d2705fcdebf3e6a63b4ec5df47e6a5dc0048d521780ff6ff5f205da79b370",
+    "sourceBytes": 76828,
+    "outputBytes": 30124
+  },
+  {
+    "source": "molecules/Gliserol.glb",
+    "output": "glicerol.glb",
+    "sourceSha256": "80a891331d420ff90afc650b840a2412378fc2a1eff03fedb121d860e4f505a6",
+    "outputSha256": "832258557af2df1eab82292cae8e64fab47e4b079cc05268f06e3c66ca95429c",
+    "sourceBytes": 81952,
+    "outputBytes": 31424
+  },
+  {
+    "source": "process/MezclaAceiteAguaEscena6.glb",
+    "output": "vertido.glb",
+    "sourceSha256": "6443ed35a9c34c498c66c4d178ff3c3a2eeb325e2a3eba8820e748c349e22caf",
+    "outputSha256": "05f5c12ba907bd7b75cafa5b49c24645464b535ee8da01a95cf78ecd907a091e",
+    "sourceBytes": 1253700,
+    "outputBytes": 118788
+  },
+  {
+    "source": "process/MezclaEscena7.glb",
+    "output": "agitacion.glb",
+    "sourceSha256": "8e8955c7817513bd32dff7a387007f0400f737fd476dff71e5e2680147a4e534",
+    "outputSha256": "7028f693427988c4ed56683cb596889eb737c5d99a213fdb7518971a046a049f",
+    "sourceBytes": 1282140,
+    "outputBytes": 159828
+  }
+]

@@ -5,6 +5,7 @@ import { getModelFrame } from '../../utils/modelFraming'
 import { getProcessPose, PROCESS_SCENES } from './processPrototypeState'
 import { createProcessMeasurements } from './processMeasurements'
 import { createProcessFrameLimiter } from './processFrameLimiter'
+import { loadLearningAsset, releaseLearningObjects } from '../../utils/learningAssets'
 
 const abortError = () => new DOMException('Prototipo cancelado', 'AbortError')
 
@@ -24,13 +25,14 @@ function disposeObjects(roots) {
 }
 
 // Own fresh GLTF instances. Never mutate useGLTF's Module 1 cache or the AR scene.
-export async function createProcessPrototype({ container, signal, reduced = true, onChange, onError, startedAt = performance.now(), diagnosticsEnabled = false, onDiagnosticsReady = () => {} }) {
+export async function createProcessPrototype({ container, signal, reduced = true, onChange, onError, onStatus = () => {}, startedAt = performance.now(), diagnosticsEnabled = false, onDiagnosticsReady = () => {} }) {
   const lifetime = new AbortController()
   const scene = new THREE.Scene()
   const assets = new THREE.Group()
   let renderer, observer, timer, failure, frame = 0, disposed = false
   let playing = false, progress = 0, sceneId = 'fill', lastTime = 0, lastReport = 0
   let qualityReduced = reduced
+  let activeAnimation, selectionRequest, selectionVersion = 0, sceneReady = false
   const frameLimiter = createProcessFrameLimiter(reduced ? 20 : 30)
   let renderCount = 0
   const measurements = createProcessMeasurements()
@@ -50,6 +52,8 @@ export async function createProcessPrototype({ container, signal, reduced = true
     pixelRatio: renderer?.getPixelRatio() ?? null,
     drawCalls: renderer?.info.render.calls ?? null, triangles: renderer?.info.render.triangles ?? null,
     geometries: renderer?.info.memory.geometries ?? null, textures: renderer?.info.memory.textures ?? null,
+    animationSource: activeAnimation ? 'blender' : sceneId === 'fill' ? 'procedural' : null,
+    clipName: activeAnimation?.clip.name || null,
     error: failure?.message || null,
   }
   const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100)
@@ -62,6 +66,13 @@ export async function createProcessPrototype({ container, signal, reduced = true
     measurements.setEnabled(false)
     disposed = true
     lifetime.abort()
+    selectionRequest?.abort()
+    if (activeAnimation) {
+      activeAnimation.mixer.stopAllAction()
+      activeAnimation.mixer.uncacheRoot(activeAnimation.gltf.scene)
+      releaseLearningObjects(activeAnimation.gltf.scenes)
+      activeAnimation = null
+    }
     signal.removeEventListener('abort', dispose)
     clearTimeout(timer)
     cancelPlayback()
@@ -96,14 +107,13 @@ export async function createProcessPrototype({ container, signal, reduced = true
     if (signal.aborted) { dispose(); throw abortError() }
     timer = setTimeout(() => fail(new Error('La carga tardó demasiado. Revisa tu conexión o continúa con la explicación sin 3D.')), 30000)
     const modelsStartedAt = performance.now()
-    const [beaker, stirrer] = await Promise.all([load('/models/VasoBlender.glb'), load('/models/AgitadorVidrio.glb')])
+    const beaker = await load('/models/VasoBlender.glb')
     if (disposed) throw abortError()
     loadMetrics.modelsLoadMs = Math.round(performance.now() - modelsStartedAt)
     clearTimeout(timer)
     const glassTemplate = beaker.getObjectByName('Beaker_250mL')
     const liquidTemplate = beaker.getObjectByName('Liquido_Aceite')
-    const rodTemplate = stirrer.getObjectByName('Agitador_Cristal')
-    if (!glassTemplate?.isMesh || !liquidTemplate?.morphTargetInfluences?.length || !rodTemplate?.isMesh) throw new Error('asset')
+    if (!glassTemplate?.isMesh || !liquidTemplate?.morphTargetInfluences?.length) throw new Error('asset')
 
     renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'low-power' })
     renderer.setClearColor('#edf7f1')
@@ -151,59 +161,25 @@ export async function createProcessPrototype({ container, signal, reduced = true
       return { group, liquid }
     }
     const receiver = makeCup('#dca53c')
-    const donor = makeCup('#86bbd6')
-    const donorPivot = new THREE.Group()
-    scene.add(donorPivot)
-    donorPivot.add(donor.group)
-    donor.group.rotation.y = Math.PI // Turn the spout toward the receiving vessel.
-    donor.group.scale.setScalar(0.72)
-
-    const rod = rodTemplate.clone()
-    rod.material = new THREE.MeshPhongMaterial({ color: '#5a9fa5', shininess: 65 })
-    rod.position.set(0, 0, 0)
-    // Geometry is centered around zero; place its lower end inside the mixture.
-    rod.scale.setScalar(0.59)
-    scene.add(rod)
-
-    const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.026, 1, 8), new THREE.MeshBasicMaterial({ color: '#86bbd6' }))
-    scene.add(stream)
-    const swirl = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.008, 4, 24, Math.PI * 1.55), new THREE.MeshBasicMaterial({ color: '#f8d77a' }))
-    swirl.rotation.x = Math.PI / 2
-    scene.add(swirl)
     const table = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.04, 40), new THREE.MeshLambertMaterial({ color: '#d2e8dc' }))
     table.position.y = -0.035
     scene.add(table)
 
-    const oilColor = new THREE.Color('#dca53c'), mixedColor = new THREE.Color('#edc86e')
-    const spout = new THREE.Vector3(), target = new THREE.Vector3(), direction = new THREE.Vector3()
-    const up = new THREE.Vector3(0, 1, 0)
+    // The procedural illustration remains available for filling only.
+    const proceduralRoot = new THREE.Group()
+    proceduralRoot.add(...scene.children.filter(object => !object.isLight))
+    scene.add(proceduralRoot)
+
     function applyPose() {
+      if (!sceneReady) return
+      if (activeAnimation) {
+        activeAnimation.action.reset().play()
+        activeAnimation.mixer.setTime(progress * activeAnimation.clip.duration)
+        return
+      }
       const pose = getProcessPose(sceneId, progress)
-      receiver.group.position.x = sceneId === 'pour' ? 0.47 : 0
       receiver.liquid.morphTargetInfluences[0] = pose.receiverLevel
       receiver.liquid.visible = pose.receiverLevel > 0.005
-      receiver.liquid.material.color.copy(oilColor).lerp(mixedColor, pose.mixed)
-      donorPivot.visible = sceneId === 'pour'
-      donorPivot.position.set(-0.83, 0.07 + 1.22 * pose.donorLift, 0)
-      donorPivot.rotation.z = -pose.tilt
-      donor.liquid.morphTargetInfluences[0] = pose.donorLevel
-      donor.liquid.visible = pose.donorLevel > 0.005
-      stream.visible = pose.stream
-      if (pose.stream) {
-        donor.group.updateWorldMatrix(true, false)
-        spout.set(-0.39, 0.95, 0).applyMatrix4(donor.group.matrixWorld)
-        target.set(receiver.group.position.x, 0.06 + pose.receiverLevel * 0.585, 0)
-        direction.subVectors(target, spout)
-        stream.position.copy(spout).add(target).multiplyScalar(0.5)
-        stream.scale.y = direction.length()
-        stream.quaternion.setFromUnitVectors(up, direction.normalize())
-      }
-      rod.visible = sceneId === 'stir'
-      rod.position.set(Math.cos(pose.stirAngle) * 0.14, 0.79, Math.sin(pose.stirAngle) * 0.14)
-      rod.rotation.set(0.07 * Math.sin(pose.stirAngle), 0, 0.07 * Math.cos(pose.stirAngle))
-      swirl.visible = sceneId === 'stir'
-      swirl.position.set(0, 0.045 + 0.9 * 0.585 + 0.009, 0)
-      swirl.rotation.z = -pose.stirAngle
     }
     function render(animationFrame = false) {
       if (disposed) return
@@ -218,16 +194,17 @@ export async function createProcessPrototype({ container, signal, reduced = true
       const width = Math.max(container.clientWidth, 1), height = Math.max(container.clientHeight, 1)
       renderer.setSize(width, height)
       camera.aspect = width / height
-      const size = sceneId === 'pour' ? new THREE.Vector3(2.5, 2.25, 1) : new THREE.Vector3(1.25, 1.7, 0.85)
-      const center = new THREE.Vector3(0, sceneId === 'pour' ? 1 : 0.65, 0)
+      const size = activeAnimation?.bounds.getSize(new THREE.Vector3()) || new THREE.Vector3(1.25, 1.7, 0.85)
+      const center = activeAnimation?.bounds.getCenter(new THREE.Vector3()) || new THREE.Vector3(0, 0.65, 0)
       camera.position.copy(getModelFrame(size, camera.aspect, camera.fov).position).add(center)
       camera.lookAt(center)
       camera.updateProjectionMatrix()
       render()
     }
     const tick = now => {
-      if (!playing || disposed) return
-      progress = Math.min(1, progress + Math.min((now - lastTime) / 1000, 0.1) / PROCESS_SCENES.find(item => item.id === sceneId).duration)
+      if (!playing || disposed || !sceneReady) return
+      const duration = activeAnimation?.clip.duration || PROCESS_SCENES.find(item => item.id === sceneId).duration
+      progress = Math.min(1, progress + Math.min((now - lastTime) / 1000, 0.1) / duration)
       lastTime = now
       if (frameLimiter.shouldRender(now) || progress >= 1) {
         render(true)
@@ -238,13 +215,79 @@ export async function createProcessPrototype({ container, signal, reduced = true
     }
     observer = new ResizeObserver(resize)
     observer.observe(container)
+    sceneReady = true
     resize()
     loadMetrics.readyMs = Math.round(performance.now() - startedAt)
+    const fillMetrics = { ...loadMetrics, models: [...loadMetrics.models] }
+    async function select(id) {
+      const next = PROCESS_SCENES.find(item => item.id === id)
+      if (disposed || !next) return
+      const version = ++selectionVersion, selectionStarted = performance.now()
+      selectionRequest?.abort()
+      selectionRequest = new AbortController()
+      cancelPlayback(); measurements.reset(); sceneReady = false; failure = null
+      if (activeAnimation) {
+        activeAnimation.mixer.stopAllAction()
+        activeAnimation.mixer.uncacheRoot(activeAnimation.gltf.scene)
+        releaseLearningObjects(activeAnimation.gltf.scenes)
+        activeAnimation = null
+      }
+      sceneId = id; progress = 0; proceduralRoot.visible = false
+      Object.assign(loadMetrics, { readyMs: null, modelsLoadMs: null, models: [] })
+      onStatus('loading'); publish(); render()
+      if (id === 'fill') {
+        Object.assign(loadMetrics, fillMetrics)
+        proceduralRoot.visible = true; sceneReady = true; resize(); onStatus('ready'); publish()
+        return
+      }
+      try {
+        const result = await loadLearningAsset(next.modelUrl, selectionRequest.signal)
+        if (disposed || version !== selectionVersion) { releaseLearningObjects(result.gltf.scenes); return }
+        const { gltf } = result, clip = gltf.animations[0]
+        if (!clip || !Number.isFinite(clip.duration) || clip.duration <= 0) {
+          releaseLearningObjects(gltf.scenes)
+          throw new Error('La escena no contiene una animación válida.')
+        }
+        const mixer = new THREE.AnimationMixer(gltf.scene)
+        const action = mixer.clipAction(clip)
+        action.setLoop(THREE.LoopOnce, 1); action.clampWhenFinished = true
+        const bounds = new THREE.Box3()
+        activeAnimation = { gltf, clip, mixer, action, bounds }
+        gltf.scene.traverse(object => {
+          for (const material of Array.isArray(object.material) ? object.material : object.material ? [object.material] : []) {
+            // These schematic liquids need both faces, but not two transparent passes.
+            if (material.transparent) material.forceSinglePass = true
+          }
+        })
+        scene.add(gltf.scene)
+        // Fit the whole motion, including the lifted pouring vessel and rod.
+        for (const fraction of [0, .25, .5, .75, 1]) {
+          action.reset().play(); mixer.setTime(fraction * clip.duration)
+          gltf.scene.updateMatrixWorld(true)
+          bounds.union(new THREE.Box3().setFromObject(gltf.scene, true))
+        }
+        if (bounds.isEmpty()) throw new Error('La escena no contiene geometría visible.')
+        loadMetrics.models = [{ url: result.url, bytes: result.bytes, loadMs: result.loadMs }]
+        loadMetrics.modelsLoadMs = result.loadMs
+        sceneReady = true; resize()
+        loadMetrics.readyMs = Math.round(performance.now() - selectionStarted)
+        onStatus('ready'); publish()
+      } catch (error) {
+        if (disposed || version !== selectionVersion) return
+        if (activeAnimation) {
+          activeAnimation.mixer.stopAllAction(); activeAnimation.mixer.uncacheRoot(activeAnimation.gltf.scene)
+          releaseLearningObjects(activeAnimation.gltf.scenes); activeAnimation = null
+        }
+        sceneReady = false
+        failure = new Error('No pudimos preparar esta animación. Reintenta o elige otra escena.')
+        onStatus('error'); onError(failure); publish()
+      }
+    }
     publish()
     return {
       dispose,
       play() {
-        if (disposed || playing) return
+        if (disposed || playing || !sceneReady) return
         if (progress >= 1) progress = 0
         playing = true
         measurements.setPlaying(true)
@@ -254,13 +297,10 @@ export async function createProcessPrototype({ container, signal, reduced = true
         publish()
         frame = requestAnimationFrame(tick)
       },
-      pause() { if (!disposed) { cancelPlayback(); render(); publish() } },
-      reset() { if (!disposed) { cancelPlayback(); measurements.reset(); progress = 0; render(); publish() } },
-      seek(value) { if (!disposed) { cancelPlayback(); progress = getProcessPose(sceneId, Number(value)).progress; render(); publish() } },
-      select(id) {
-        if (disposed || !PROCESS_SCENES.some(item => item.id === id)) return
-        cancelPlayback(); measurements.reset(); sceneId = id; progress = 0; resize(); publish()
-      },
+      pause() { if (!disposed && sceneReady) { cancelPlayback(); render(); publish() } },
+      reset() { if (!disposed && sceneReady) { cancelPlayback(); measurements.reset(); progress = 0; render(); publish() } },
+      seek(value) { if (!disposed && sceneReady) { cancelPlayback(); progress = getProcessPose(sceneId, Number(value)).progress; render(); publish() } },
+      select,
       setQuality(value) {
         if (disposed) return
         if (qualityReduced !== value) {

@@ -1,4 +1,6 @@
 .process-prototype { min-width: 0; margin: 22px 0; padding: clamp(12px, 3vw, 22px); border: 1px solid #b8d9cb; border-radius: 18px; background: #f5fbf7; color: #183b3a; }
+.process-stage.process-stage-text { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.process-prototype-scheme { max-width: 520px; margin: 0 auto 16px; }
 .process-prototype-heading h3 { margin: 6px 0 8px; font-size: 1.2rem; }
 .process-prototype p { font-size: .85rem; line-height: 1.6; }
 .process-prototype-heading p, .process-prototype-intro p { color: #526b68; }

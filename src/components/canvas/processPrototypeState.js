@@ -1,8 +1,8 @@
 // Deterministic poses let students pause, scrub and repeat without accumulating drift.
 export const PROCESS_SCENES = [
   { id: 'fill', title: 'Llenado', duration: 6, description: 'Observa cómo aumenta el nivel del aceite en el vaso. El llenado representa una cantidad ilustrativa, no una medición.', observation: 'El aceite es uno de los reactivos del proceso.' },
-  { id: 'pour', title: 'Vertido', duration: 8, description: 'La solución alcalina ya preparada se incorpora al aceite. Esta escena no representa la preparación del NaOH ni establece cantidades para una práctica real.', observation: 'El recipiente azul contiene solución alcalina preparada; el amarillo contiene aceite.' },
-  { id: 'stir', title: 'Agitación', duration: 7, description: 'El agitador recorre la mezcla y su apariencia cambia gradualmente. El movimiento favorece el contacto entre los reactivos.', observation: 'El cambio de aspecto es esquemático: no demuestra que la reacción o el curado hayan terminado.' },
+  { id: 'pour', title: 'Vertido', duration: 6.792, modelUrl: '/models/optimized/vertido.glb', description: 'La solución alcalina ya preparada se incorpora al aceite. Esta escena no representa la preparación del NaOH ni establece cantidades para una práctica real.', observation: 'El vaso que se inclina contiene la solución alcalina; el recipiente receptor contiene aceite.' },
+  { id: 'stir', title: 'Agitación', duration: 7.167, modelUrl: '/models/optimized/agitacion.glb', description: 'El agitador recorre la mezcla. El movimiento favorece el contacto entre los reactivos.', observation: 'El movimiento es ilustrativo: no demuestra que la reacción o el curado hayan terminado.' },
 ]
 
 const clamp = value => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))

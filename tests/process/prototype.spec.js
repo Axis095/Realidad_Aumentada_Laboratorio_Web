@@ -73,6 +73,7 @@ for (const width of [320, 1366]) test(`three scenes, playback, seeking and reset
   expect(await page.evaluate(() => window.__processDraws)).toBe(draws)
   for (const [name, value] of [['Llenado', '80'], ['Vertido', '50'], ['Agitación', '60']]) {
     await panel(page).getByRole('button', { name: new RegExp(name) }).click()
+    await expect(page.locator('.process-prototype-stage')).toHaveAttribute('data-status', 'ready')
     await expect(progress(page)).toHaveValue('0')
     const beforeSeek = await page.evaluate(() => window.__processDraws)
     await progress(page).fill(value)
@@ -89,7 +90,7 @@ for (const width of [320, 1366]) test(`three scenes, playback, seeking and reset
   await panel(page).getByRole('button', { name: 'Reiniciar', exact: true }).click()
   await expect(progress(page)).toHaveValue('0')
   await expect(page.locator('.process-prototype-stage')).toHaveAttribute('data-playing', 'false')
-  expect([...new Set(models)].sort()).toEqual(['/models/AgitadorVidrio.glb', '/models/VasoBlender.glb'])
+  expect([...new Set(models)].sort()).toEqual(['/models/VasoBlender.glb', '/models/optimized/agitacion.glb', '/models/optimized/vertido.glb'])
   await page.getByRole('button', { name: 'Cerrar prototipo 3D' }).click()
   await expect(canvas).toHaveCount(0)
   await open(page)

@@ -10,6 +10,8 @@
         "test:ar": "playwright test",
         "test:models": "playwright test --config playwright.models.config.js",
         "test:process": "playwright test --config playwright.process.config.js",
+        "test:learning": "playwright test --config playwright.learning.config.js",
+        "assets:learning": "node scripts/prepare-learning-assets.mjs",
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {

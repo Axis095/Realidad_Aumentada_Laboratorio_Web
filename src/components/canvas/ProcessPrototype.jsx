@@ -6,7 +6,7 @@ import './ProcessPrototype.css'
 
 const initialPlayback = { sceneId: 'fill', progress: 0, playing: false, completed: false }
 
-export default function ProcessPrototype() {
+export default function ProcessPrototype({ children }) {
   const { profile } = usePerformanceProfile()
   const [enabled, setEnabled] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -59,6 +59,9 @@ export default function ProcessPrototype() {
             if (!controller.signal.aborted) diagnosticsRef.current = handle
           },
           onError: fail,
+          onStatus: next => {
+            if (!controller.signal.aborted) { setStatus(next); if (next !== 'error') setError('') }
+          },
           onChange: next => {
             if (controller.signal.aborted) return
             playbackRef.current = next
@@ -105,16 +108,17 @@ export default function ProcessPrototype() {
         <p>Explora tres movimientos del proceso a tu ritmo. Este visor no sustituye las cinco etapas ni el reto de aprendizaje.</p>
       </header>
       {!enabled ? <div className="process-prototype-intro">
+        {children && <div className="process-prototype-scheme"><p>Esquema de la etapa seleccionada</p>{children}</div>}
         <ol><li>Llenar el vaso</li><li>Verter la solución</li><li>Agitar la mezcla</li></ol>
         <button type="button" onClick={() => setEnabled(true)}>Abrir prototipo 3D</button>
-        <p>Opcional: descarga solo el vaso y el agitador (aprox. 1,2 MiB de modelos). Puedes seguir aprendiendo con la explicación ilustrada sin abrirlo.</p>
+        <p>El visor sustituye al esquema. Carga solo los recursos necesarios: unos 1,2 MiB para llenado y menos de 160 KB para cada animación adicional.</p>
       </div> : <>
         <div className="process-prototype-toolbar">
           <span>{profile === 'reduced' ? 'Ligero · hasta 20 FPS' : 'Completo · hasta 30 FPS'}</span>
           <button type="button" className="process-prototype-secondary" onClick={() => { setEnabled(false); setStatus('idle') }}>Cerrar prototipo 3D</button>
         </div>
         <div className="process-prototype-scenes" role="group" aria-label="Escenas del prototipo">
-          {PROCESS_SCENES.map((item, index) => <button type="button" key={item.id} disabled={!ready}
+          {PROCESS_SCENES.map((item, index) => <button type="button" key={item.id} disabled={!runtimeRef.current}
             aria-pressed={playback.sceneId === item.id} onClick={() => { setNotice(''); runtimeRef.current?.select(item.id) }}>
             <span>{index + 1}</span> {item.title}
           </button>)}
@@ -122,10 +126,13 @@ export default function ProcessPrototype() {
         <div className="process-prototype-stage" data-status={status} data-scene={playback.sceneId} data-playing={playback.playing}>
           <div className="process-prototype-canvas" ref={containerRef} />
           <span className="process-prototype-caption">{selected.title} · representación esquemática</span>
-          {status === 'loading' && <p className="process-prototype-overlay" role="status">Preparando vaso y agitador…</p>}
+          {status === 'loading' && <p className="process-prototype-overlay" role="status">Preparando escena…</p>}
           {status === 'error' && <div className="process-prototype-overlay">
             <p role="alert">{error}</p>
-            <button type="button" onClick={() => setAttempt(value => value + 1)}>Reintentar prototipo</button>
+            <button type="button" onClick={() => {
+              if (runtimeRef.current && playback.sceneId !== 'fill' && diagnosticsRef.current?.getSnapshot().running) runtimeRef.current.select(playback.sceneId)
+              else setAttempt(value => value + 1)
+            }}>Reintentar prototipo</button>
             <span>La explicación y las actividades del módulo siguen disponibles.</span>
           </div>}
         </div>

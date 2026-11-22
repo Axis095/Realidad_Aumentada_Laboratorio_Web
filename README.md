@@ -17,6 +17,7 @@ pnpm run build
 pnpm run test:models
 pnpm run test:ar
 pnpm run test:process
+pnpm run test:learning
 ```
 
 Las pruebas usan Microsoft Edge instalado, un perfil aislado y cámara simulada.
@@ -32,17 +33,19 @@ El visor opcional contiene **Llenado**, **Vertido** y **Agitación**, con botone
 cualquier instante sin movimiento continuo. Cada escena termina sin avanzar
 automáticamente a la siguiente. No modifica el progreso de las cinco etapas ni
 el reto de secuencia; la explicación ilustrada sigue disponible sin abrir el 3D.
+La zona visual muestra el esquema **o** el visor, nunca ambos a la vez. Cambiar
+de etapa cierra el visor y cancela su carga/reproducción.
 
 Implementación y límites:
 
-- Three.js y el visor se importan al abrirlo. Solo descarga `VasoBlender.glb` y
-  `AgitadorVidrio.glb` (aprox. 1,2 MiB de modelos); no usa cámara ni descarga
-  balanza, guantes, HDR ni modelos de los otros módulos.
+- Three.js y el visor se importan al abrirlo. Llenado descarga `VasoBlender.glb`
+  (aprox. 1,2 MB). Vertido y agitación descargan su GLB optimizado al seleccionarlos
+  (118.788 y 159.828 bytes). No se precargan las demás escenas entregadas.
 - Los GLB originales no se reexportan ni se modifican. Se usan instancias propias,
-  independientes de las cachés del Módulo 1 y AR. El vaso se reutiliza para ambos
-  recipientes. Se conserva la deformación original del líquido, ajustando su
-  escala desproporcionada únicamente en la copia de esta escena.
-- Omite los números de texto extruido y agrupa marcas estáticas en memoria.
+  independientes de las cachés del Módulo 1 y AR. Llenado conserva la deformación
+  del líquido ajustada en memoria. Vertido y agitación reproducen los clips de
+  Blender, con su duración original y control de avance reversible.
+- Las copias omiten números de texto extruido y agrupan marcas estáticas.
   Vidrio simple sin transmisión física, sombras dinámicas ni motor de fluidos.
 - Un solo canvas para las tres escenas; hasta 20 FPS/DPR 1 en Ligero y 30 FPS/DPR
   máximo 1,35 en Completo. En pausa solo redibuja por una acción o un cambio de
@@ -50,12 +53,13 @@ Implementación y límites:
 - El limitador conserva la cadencia aunque un callback llegue tarde. Omite
   intervalos perdidos sin acumular retrasos ni dibujar ráfagas para recuperarlos.
 - Salir de la pestaña o dejar el panel fuera de pantalla pausa sin reanudar solo.
-  Cerrar, cambiar de módulo o fallar libera recursos y cancela descargas. Errores
-  de modelo/WebGL permiten reintentar o continuar con la explicación sin 3D.
+  Cambiar de animación libera la anterior y cancela descargas pendientes; el
+  recurso de llenado se conserva mientras el visor está abierto. Cerrar o cambiar
+  de módulo libera todo. Un fallo de escena permite reintentar o elegir otra.
 - Es una representación esquemática: no calcula dosis, temperatura, volúmenes,
-  viscosidad real ni finalización química/curado. Azul identifica la solución
-  alcalina ya preparada; amarillo identifica el aceite, no colores reales
-  obligatorios. El vertido y el cambio de aspecto son ilustrativos.
+  viscosidad real ni finalización química/curado. El vaso vertedor contiene la
+  solución alcalina preparada; el receptor contiene aceite. El movimiento y los
+  colores son ilustrativos.
 
 Las pruebas de `test:process` verifican carga bajo demanda, las tres escenas,
 pausa/reinicio/avance, fin de reproducción, perfiles, anchos 320/390/1366 px,
@@ -97,6 +101,37 @@ navegador, pantalla y conexión estimada cuando esté disponible. No graba imág
 no mide temperatura ni RAM total, no persiste datos ni los envía a un servidor.
 Si el portapapeles falla, se puede copiar manualmente el texto visible. Los GLB
 originales y el panel AR no cambian.
+
+## Moléculas 3D del Módulo 3
+
+En `/modulo/3`, selecciona **Hidróxido de sodio** o **Glicerol** y pulsa
+**Explorar … en 3D**. Los otros modelos conservan su esquema educativo. Arrastra,
+usa los botones de giro/zoom/centrado o pulsa **Volver al esquema**. Cambiar de
+molécula cierra y libera el visor; no abre ni descarga el siguiente modelo solo.
+El progreso, las explicaciones y el quiz siguen disponibles sin activar el 3D.
+
+- Copias optimizadas: NaOH 30.124 bytes; glicerol 31.424 bytes, con cuatro grupos
+  de instancias para los átomos y enlaces. No requieren decodificadores externos.
+- Render bajo demanda, sin autorrotación, damping ni RAF continuo. DPR 1 en
+  Ligero y hasta 1,35 en Completo. Un único canvas por visor activo.
+- Manejo de errores, cancelación y reintento; las pruebas incluyen cierre,
+  cambio rápido de modelo, contexto perdido y anchos de 320/1366 px.
+
+### Conservación y preparación de recursos
+
+Los cuatro originales usados se conservan en `public/models/molecules` y
+`public/models/process`. Las versiones web están en `public/models/optimized`.
+`manifest.json` registra tamaños y SHA-256 de fuentes y resultados.
+
+Para regenerar únicamente las copias: `pnpm run assets:learning`. El script usa
+la herramienta glTF Transform ya instalada, comprueba que las fuentes no cambian,
+elimina números extruidos y restos de líquido sin animar, agrupa graduaciones,
+simplifica el vidrio y remuestrea las curvas sin eliminar sus canales. No debe
+aplicarse automáticamente a nuevas escenas sin revisar sus nombres y contenido.
+
+Para pruebas aisladas en Vercel, usa la rama `feat/mobile-learning-models` como
+Preview. Mantén `main` como rama de producción y no promociones la Preview hasta
+validar la versión en celulares físicos.
 
 ## Catálogo de realidad aumentada
 

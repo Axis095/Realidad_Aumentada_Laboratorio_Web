@@ -3,6 +3,7 @@ import { animate, stagger } from 'animejs'
 import ModuloBase from './ModuloBase'
 import RouteLoader from '../ui/RouteLoader'
 import useLabStore from '../../store/Uselabstore'
+import MoleculeViewer from './MoleculeViewer'
 import './ModuloBase.css'
 import './Aprendizaje.css'
 
@@ -19,6 +20,7 @@ const molecules = [
   },
   {
     id: 'naoh',
+    modelUrl: '/models/optimized/naoh.glb',
     name: 'Hidróxido de sodio',
     formula: 'NaOH',
     kind: 'Reactivo alcalino',
@@ -29,6 +31,7 @@ const molecules = [
   },
   {
     id: 'glicerol',
+    modelUrl: '/models/optimized/glicerol.glb',
     name: 'Glicerol',
     formula: 'C₃H₈O₃',
     kind: 'Producto',
@@ -156,12 +159,14 @@ export default function Modulo3() {
               <span><i className="atom-na" />Sodio</span>
             </div>
             <button type="button" aria-pressed={showAtomLabels} onClick={() => setShowAtomLabels((visible) => !visible)}>
-              Etiquetas {showAtomLabels ? 'activadas' : 'ocultas'}
+              Etiquetas del esquema {showAtomLabels ? 'activadas' : 'ocultas'}
             </button>
           </div>
 
           <div className="molecule-stage">
-            <MoleculeDiagram molecule={selected} showLabels={showAtomLabels} />
+            <MoleculeViewer key={selected.id} molecule={selected}>
+              <MoleculeDiagram molecule={selected} showLabels={showAtomLabels} />
+            </MoleculeViewer>
             <article className="molecule-copy">
               <span className="learning-kicker">{selected.kind}</span>
               <h3>{selected.name}</h3>

@@ -168,8 +168,7 @@ export default function Modulo2() {
           ))}
         </nav>
 
-        <div className="process-stage">
-          <ProcessVisual step={step} />
+        <div className="process-stage process-stage-text">
           <article className="process-copy">
             <span className="learning-kicker">Etapa {pasoActual + 1} de {steps.length}</span>
             <h3>{step.title}</h3>
@@ -207,7 +206,9 @@ export default function Modulo2() {
           </article>
         </div>
 
-        <ProcessPrototype />
+        <ProcessPrototype key={pasoActual}>
+          <ProcessVisual step={step} />
+        </ProcessPrototype>
 
         <SequenceChallenge completed={sequenceCompleted} onComplete={completeSequence} />
 
