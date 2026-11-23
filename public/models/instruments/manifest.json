@@ -1,0 +1,18 @@
+[
+  {
+    "source": "matraz aforado.glb",
+    "output": "matraz-aforado.glb",
+    "sourceSha256": "79809ce09e107a41ee4664cfbbf869f652e78dcf4c62f39819ab1b2e3e688985",
+    "outputSha256": "f85a9ff956436b35a95a093be7377d49eaf12fd5d38d5989a8cc58ead6c70354",
+    "labels": 1,
+    "vertices": 1508
+  },
+  {
+    "source": "matraz de erlenmeyer.glb",
+    "output": "matraz-erlenmeyer.glb",
+    "sourceSha256": "edad907de47983a2481bf9e2a5c0b0950dc63c2fa18085f23835df4ed30a7182",
+    "outputSha256": "2a1689e6c529858624449428be479a296bcbb310252e1633face200dcdfc182b",
+    "labels": 6,
+    "vertices": 5672
+  }
+]

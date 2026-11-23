@@ -148,6 +148,13 @@ Cada GLB se descarga al seleccionarlo, sin precargar todo el catálogo ni reprod
 animaciones automáticamente. El progreso anterior se conserva sobre el nuevo total
 de 16 instrumentos; los seis nuevos quedan pendientes de explorar.
 
+Los matraces aforado y Erlenmeyer utilizan copias en `public/models/instruments`.
+Sus números exportados estaban separados del vidrio: `pnpm assets:instruments`
+ajusta la geometría de las inscripciones a la superficie y recalcula sus normales.
+El proceso se ejecuta al preparar los archivos, sin trabajo adicional por fotograma.
+Los GLB originales se conservan; `manifest.json` registra sus hashes y los de las copias.
+El catálogo compartido utiliza estas correcciones tanto en el Módulo 1 como en AR.
+
 ### Preparar tarjetas para un evento
 
 1. Publica el proyecto por HTTPS y abre `/ar/tarjeta`.

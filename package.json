@@ -12,6 +12,7 @@
         "test:process": "playwright test --config playwright.process.config.js",
         "test:learning": "playwright test --config playwright.learning.config.js",
         "assets:learning": "node scripts/prepare-learning-assets.mjs",
+        "assets:instruments": "node scripts/prepare-instrument-assets.mjs",
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {

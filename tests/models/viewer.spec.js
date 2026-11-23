@@ -63,6 +63,16 @@ for (const width of [320, 1366]) {
       if (['beaker', 'soporte', 'matraz-aforado', 'matraz-erlenmeyer', 'matraz-decantacion', 'mortero', 'vidrio-reloj'].includes(id)) {
         await page.locator('.m1-canvas-box').screenshot({ path: testInfo.outputPath(`${id}-${width}.png`) })
       }
+      if (['matraz-aforado', 'matraz-erlenmeyer'].includes(id)) {
+        const canvas = page.locator('.m1-scene canvas')
+        await canvas.scrollIntoViewIfNeeded()
+        const box = await canvas.boundingBox()
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box.x + box.width / 2 + box.height / 4, box.y + box.height / 2, { steps: 12 })
+        await page.mouse.up()
+        await page.locator('.m1-canvas-box').screenshot({ path: testInfo.outputPath(`${id}-side-${width}.png`) })
+      }
     }
     expect(modelRequests.some(url => url.endsWith('/AgitadorVidrio.glb'))).toBe(true)
     expect([...new Set(modelRequests.map(url => decodeURIComponent(new URL(url).pathname)))].sort())
