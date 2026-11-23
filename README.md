@@ -28,8 +28,20 @@ necesarias, especialmente con tarjetas enmicadas y teléfonos modestos.
 ## Prototipo del proceso en el Módulo 2
 
 En `/modulo/2`, después de la explicación de la etapa, abre **Abrir prototipo 3D**.
-El visor opcional contiene **Llenado**, **Vertido** y **Agitación**, con botones
-**Reproducir**, **Pausar**, **Reiniciar** y un control de avance para observar
+El visor opcional muestra únicamente las escenas de la etapa seleccionada:
+
+| Etapa | Escenas disponibles |
+| --- | --- |
+| Preparar aceite | Llenado ilustrativo del vaso |
+| Preparar NaOH | Medición de agua; disolución de NaOH con termómetro |
+| Mezclar | Vertido de solución alcalina; agitación |
+| Observar traza | Formación de emulsión |
+| Moldear | Vertido en moldes |
+
+El filtrado, la medición del aceite y el curado no están animados; se explican en
+el contenido y en las notas del visor. La emulsión no sustituye la comprobación
+de la temperatura o de la traza. Hay botones **Reproducir**, **Pausar**, **Reiniciar**
+y un control de avance para observar
 cualquier instante sin movimiento continuo. Cada escena termina sin avanzar
 automáticamente a la siguiente. No modifica el progreso de las cinco etapas ni
 el reto de secuencia; la explicación ilustrada sigue disponible sin abrir el 3D.
@@ -40,14 +52,16 @@ Implementación y límites:
 
 - Three.js y el visor se importan al abrirlo. Llenado descarga `VasoBlender.glb`
   (aprox. 1,2 MB). Vertido y agitación descargan su GLB optimizado al seleccionarlos
-  (118.788 y 159.828 bytes). No se precargan las demás escenas entregadas.
+  (118.788 y 159.828 bytes). Agua y disolución ocupan 163.960 y 187.372 bytes;
+  emulsión y moldeo, 680.444 y 703.580 bytes. Abrir las etapas 2–5 no descarga
+  el vaso de llenado. No se precargan otras escenas.
 - Los GLB originales no se reexportan ni se modifican. Se usan instancias propias,
   independientes de las cachés del Módulo 1 y AR. Llenado conserva la deformación
-  del líquido ajustada en memoria. Vertido y agitación reproducen los clips de
+  del líquido ajustada en memoria. Las otras seis escenas reproducen los clips de
   Blender, con su duración original y control de avance reversible.
 - Las copias omiten números de texto extruido y agrupan marcas estáticas.
   Vidrio simple sin transmisión física, sombras dinámicas ni motor de fluidos.
-- Un solo canvas para las tres escenas; hasta 20 FPS/DPR 1 en Ligero y 30 FPS/DPR
+- Un solo canvas para las escenas de la etapa; hasta 20 FPS/DPR 1 en Ligero y 30 FPS/DPR
   máximo 1,35 en Completo. En pausa solo redibuja por una acción o un cambio de
   tamaño. No hay reproducción automática, incluso con movimiento reducido.
 - El limitador conserva la cadencia aunque un callback llegue tarde. Omite
@@ -61,7 +75,7 @@ Implementación y límites:
   solución alcalina preparada; el receptor contiene aceite. El movimiento y los
   colores son ilustrativos.
 
-Las pruebas de `test:process` verifican carga bajo demanda, las tres escenas,
+Las pruebas de `test:process` verifican carga bajo demanda, las cinco etapas,
 pausa/reinicio/avance, fin de reproducción, perfiles, anchos 320/390/1366 px,
 cancelación, recuperación y ausencia de renders continuos en pausa. No sustituyen
 la comprobación de fluidez y temperatura en un teléfono físico.
@@ -72,7 +86,7 @@ Debajo de los controles, abre **Prueba de rendimiento**, abre el visor y
 reproduce una escena con el panel abierto. Espera a que aparezca **Resultado
 disponible** (al menos dos segundos de reproducción); preferiblemente deja
 terminar la escena y pulsa **Copiar resultado**. Indica opcionalmente el teléfono.
-Repite en Llenado, Vertido y Agitación; compara Ligero y Completo sin confundir
+Repite en las escenas de cada etapa; compara Ligero y Completo sin confundir
 sus límites de 20/30 FPS. El panel indica la duración de la última muestra:
 los valores no son un promedio de toda la escena.
 
@@ -119,14 +133,16 @@ El progreso, las explicaciones y el quiz siguen disponibles sin activar el 3D.
 
 ### Conservación y preparación de recursos
 
-Los cuatro originales usados se conservan en `public/models/molecules` y
+Los ocho originales usados se conservan en `public/models/molecules` y
 `public/models/process`. Las versiones web están en `public/models/optimized`.
 `manifest.json` registra tamaños y SHA-256 de fuentes y resultados.
 
 Para regenerar únicamente las copias: `pnpm run assets:learning`. El script usa
 la herramienta glTF Transform ya instalada, comprueba que las fuentes no cambian,
 elimina números extruidos y restos de líquido sin animar, agrupa graduaciones,
-simplifica el vidrio y remuestrea las curvas sin eliminar sus canales. No debe
+simplifica el vidrio y remuestrea las curvas sin eliminar sus canales. Las cuatro
+escenas nuevas también reducen geometría fuera del navegador con Meshoptimizer,
+sin añadir decodificadores a la web. No debe
 aplicarse automáticamente a nuevas escenas sin revisar sus nombres y contenido.
 
 Para pruebas aisladas en Vercel, usa la rama `feat/mobile-learning-models` como

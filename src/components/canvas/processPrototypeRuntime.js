@@ -25,12 +25,12 @@ function disposeObjects(roots) {
 }
 
 // Own fresh GLTF instances. Never mutate useGLTF's Module 1 cache or the AR scene.
-export async function createProcessPrototype({ container, signal, reduced = true, onChange, onError, onStatus = () => {}, startedAt = performance.now(), diagnosticsEnabled = false, onDiagnosticsReady = () => {} }) {
+export async function createProcessPrototype({ container, signal, reduced = true, initialSceneId = 'fill', allowedSceneIds = PROCESS_SCENES.map(item => item.id), onChange, onError, onStatus = () => {}, startedAt = performance.now(), diagnosticsEnabled = false, onDiagnosticsReady = () => {} }) {
   const lifetime = new AbortController()
   const scene = new THREE.Scene()
   const assets = new THREE.Group()
   let renderer, observer, timer, failure, frame = 0, disposed = false
-  let playing = false, progress = 0, sceneId = 'fill', lastTime = 0, lastReport = 0
+  let playing = false, progress = 0, sceneId = initialSceneId, lastTime = 0, lastReport = 0
   let qualityReduced = reduced
   let activeAnimation, selectionRequest, selectionVersion = 0, sceneReady = false
   const frameLimiter = createProcessFrameLimiter(reduced ? 20 : 30)
@@ -106,19 +106,10 @@ export async function createProcessPrototype({ container, signal, reduced = true
   try {
     if (signal.aborted) { dispose(); throw abortError() }
     timer = setTimeout(() => fail(new Error('La carga tardó demasiado. Revisa tu conexión o continúa con la explicación sin 3D.')), 30000)
-    const modelsStartedAt = performance.now()
-    const beaker = await load('/models/VasoBlender.glb')
-    if (disposed) throw abortError()
-    loadMetrics.modelsLoadMs = Math.round(performance.now() - modelsStartedAt)
-    clearTimeout(timer)
-    const glassTemplate = beaker.getObjectByName('Beaker_250mL')
-    const liquidTemplate = beaker.getObjectByName('Liquido_Aceite')
-    if (!glassTemplate?.isMesh || !liquidTemplate?.morphTargetInfluences?.length) throw new Error('asset')
-
     renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'low-power' })
     renderer.setClearColor('#edf7f1')
     renderer.setPixelRatio(qualityReduced ? 1 : Math.min(devicePixelRatio || 1, 1.35))
-    renderer.domElement.setAttribute('aria-label', 'Animación didáctica de llenado, vertido y agitación')
+    renderer.domElement.setAttribute('aria-label', 'Animación didáctica del proceso de saponificación')
     renderer.domElement.setAttribute('role', 'img')
     renderer.domElement.addEventListener('webglcontextlost', contextLost)
     container.appendChild(renderer.domElement)
@@ -127,48 +118,59 @@ export async function createProcessPrototype({ container, signal, reduced = true
     light.position.set(-3, 5, 4)
     scene.add(light)
 
-    // Omit expensive extruded numeric labels in this illustrative, uncalibrated view.
-    // Merge only the static graduation strokes; never merge the moving liquid.
-    beaker.updateMatrixWorld(true)
-    const marks = []
-    beaker.traverse(object => {
-      if (!object.isMesh || !object.name.startsWith('Graduation_')) return
-      const geometry = object.geometry.index ? object.geometry.toNonIndexed() : object.geometry.clone()
-      for (const name of Object.keys(geometry.attributes)) if (!['position', 'normal'].includes(name)) geometry.deleteAttribute(name)
-      geometry.applyMatrix4(object.matrixWorld)
-      marks.push(geometry)
-    })
-    const markings = marks.length ? mergeGeometries(marks) : null
-    marks.forEach(geometry => geometry.dispose())
-    if (!markings) throw new Error('asset')
-    const glassMaterial = new THREE.MeshPhongMaterial({ color: '#a6d6d7', transparent: true, opacity: 0.24, depthWrite: false, shininess: 55 })
-    const markMaterial = new THREE.MeshBasicMaterial({ color: '#527675' })
-    const glassGeometry = glassTemplate.geometry.clone().applyMatrix4(glassTemplate.matrixWorld)
-
-    function makeCup(color) {
-      const group = new THREE.Group()
-      scene.add(group)
-      group.add(new THREE.Mesh(glassGeometry, glassMaterial), new THREE.Mesh(markings, markMaterial))
-      const liquid = liquidTemplate.clone()
-      liquid.material = new THREE.MeshPhongMaterial({ color, shininess: 25 })
-      // The supplied liquid is ~10x smaller than the beaker. Fit its original morph
-      // geometry in this scene only, leaving the file and cached assets untouched.
-      liquid.scale.set(9.5, 11.5, 9.5)
-      liquid.position.set(0, 0.045, 0)
-      liquid.morphTargetInfluences[0] = 0
-      liquid.renderOrder = 0
-      group.add(liquid)
-      return { group, liquid }
-    }
-    const receiver = makeCup('#dca53c')
-    const table = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.04, 40), new THREE.MeshLambertMaterial({ color: '#d2e8dc' }))
-    table.position.y = -0.035
-    scene.add(table)
-
-    // The procedural illustration remains available for filling only.
     const proceduralRoot = new THREE.Group()
-    proceduralRoot.add(...scene.children.filter(object => !object.isLight))
     scene.add(proceduralRoot)
+    let receiver, fillMetrics
+    async function prepareFill() {
+      if (receiver) return
+      const modelsStartedAt = performance.now()
+      const beaker = await load('/models/VasoBlender.glb')
+      if (disposed) throw abortError()
+      loadMetrics.modelsLoadMs = Math.round(performance.now() - modelsStartedAt)
+      const glassTemplate = beaker.getObjectByName('Beaker_250mL')
+      const liquidTemplate = beaker.getObjectByName('Liquido_Aceite')
+      if (!glassTemplate?.isMesh || !liquidTemplate?.morphTargetInfluences?.length) throw new Error('asset')
+
+      // Omit expensive extruded numeric labels in this illustrative, uncalibrated view.
+      // Merge only the static graduation strokes; never merge the moving liquid.
+      beaker.updateMatrixWorld(true)
+      const marks = []
+      beaker.traverse(object => {
+        if (!object.isMesh || !object.name.startsWith('Graduation_')) return
+        const geometry = object.geometry.index ? object.geometry.toNonIndexed() : object.geometry.clone()
+        for (const name of Object.keys(geometry.attributes)) if (!['position', 'normal'].includes(name)) geometry.deleteAttribute(name)
+        geometry.applyMatrix4(object.matrixWorld)
+        marks.push(geometry)
+      })
+      const markings = marks.length ? mergeGeometries(marks) : null
+      marks.forEach(geometry => geometry.dispose())
+      if (!markings) throw new Error('asset')
+      const glassMaterial = new THREE.MeshPhongMaterial({ color: '#a6d6d7', transparent: true, opacity: 0.24, depthWrite: false, shininess: 55 })
+      const markMaterial = new THREE.MeshBasicMaterial({ color: '#527675' })
+      const glassGeometry = glassTemplate.geometry.clone().applyMatrix4(glassTemplate.matrixWorld)
+
+      function makeCup(color) {
+        const group = new THREE.Group()
+        proceduralRoot.add(group)
+        group.add(new THREE.Mesh(glassGeometry, glassMaterial), new THREE.Mesh(markings, markMaterial))
+        const liquid = liquidTemplate.clone()
+        liquid.material = new THREE.MeshPhongMaterial({ color, shininess: 25 })
+        // The supplied liquid is ~10x smaller than the beaker. Fit its original morph
+        // geometry in this scene only, leaving the file and cached assets untouched.
+        liquid.scale.set(9.5, 11.5, 9.5)
+        liquid.position.set(0, 0.045, 0)
+        liquid.morphTargetInfluences[0] = 0
+        liquid.renderOrder = 0
+        group.add(liquid)
+        return { group, liquid }
+      }
+      receiver = makeCup('#dca53c')
+      const table = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.04, 40), new THREE.MeshLambertMaterial({ color: '#d2e8dc' }))
+      table.position.y = -0.035
+      proceduralRoot.add(table)
+      loadMetrics.readyMs = Math.round(performance.now() - startedAt)
+      fillMetrics = { ...loadMetrics, models: [...loadMetrics.models] }
+    }
 
     function applyPose() {
       if (!sceneReady) return
@@ -215,13 +217,9 @@ export async function createProcessPrototype({ container, signal, reduced = true
     }
     observer = new ResizeObserver(resize)
     observer.observe(container)
-    sceneReady = true
-    resize()
-    loadMetrics.readyMs = Math.round(performance.now() - startedAt)
-    const fillMetrics = { ...loadMetrics, models: [...loadMetrics.models] }
     async function select(id) {
       const next = PROCESS_SCENES.find(item => item.id === id)
-      if (disposed || !next) return
+      if (disposed || !next || !allowedSceneIds.includes(id)) return
       const version = ++selectionVersion, selectionStarted = performance.now()
       selectionRequest?.abort()
       selectionRequest = new AbortController()
@@ -233,9 +231,12 @@ export async function createProcessPrototype({ container, signal, reduced = true
         activeAnimation = null
       }
       sceneId = id; progress = 0; proceduralRoot.visible = false
+      renderer.domElement.setAttribute('aria-label', `Animación didáctica: ${next.title}`)
       Object.assign(loadMetrics, { readyMs: null, modelsLoadMs: null, models: [] })
       onStatus('loading'); publish(); render()
       if (id === 'fill') {
+        try { await prepareFill() } catch (error) { fail(new Error('No pudimos preparar los modelos del prototipo. Reintenta o continúa con la explicación sin 3D.')); return }
+        if (disposed || version !== selectionVersion) return
         Object.assign(loadMetrics, fillMetrics)
         proceduralRoot.visible = true; sceneReady = true; resize(); onStatus('ready'); publish()
         return
@@ -270,7 +271,7 @@ export async function createProcessPrototype({ container, signal, reduced = true
         loadMetrics.models = [{ url: result.url, bytes: result.bytes, loadMs: result.loadMs }]
         loadMetrics.modelsLoadMs = result.loadMs
         sceneReady = true; resize()
-        loadMetrics.readyMs = Math.round(performance.now() - selectionStarted)
+        loadMetrics.readyMs = Math.round(performance.now() - (version === 1 ? startedAt : selectionStarted))
         onStatus('ready'); publish()
       } catch (error) {
         if (disposed || version !== selectionVersion) return
@@ -283,6 +284,9 @@ export async function createProcessPrototype({ container, signal, reduced = true
         onStatus('error'); onError(failure); publish()
       }
     }
+    await select(initialSceneId)
+    clearTimeout(timer)
+    if (disposed) throw failure || abortError()
     publish()
     return {
       dispose,

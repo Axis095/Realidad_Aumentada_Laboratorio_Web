@@ -206,7 +206,7 @@ export default function Modulo2() {
           </article>
         </div>
 
-        <ProcessPrototype key={pasoActual}>
+        <ProcessPrototype key={pasoActual} stageIndex={pasoActual}>
           <ProcessVisual step={step} />
         </ProcessPrototype>
 

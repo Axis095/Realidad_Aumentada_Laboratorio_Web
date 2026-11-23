@@ -30,5 +30,37 @@
     "outputSha256": "7028f693427988c4ed56683cb596889eb737c5d99a213fdb7518971a046a049f",
     "sourceBytes": 1282140,
     "outputBytes": 159828
+  },
+  {
+    "source": "process/MedicionAguaEscena4.glb",
+    "output": "medicion-agua.glb",
+    "sourceSha256": "0a97cb2480f412a9a81076047dc5ae2ed600ae8a89a046cf24bc8c8ec0e8ab3d",
+    "outputSha256": "506977dff53ca12a1bbeb5f1419ef4bd96eb39a70f16ffc01d0e98f2056cf884",
+    "sourceBytes": 1926568,
+    "outputBytes": 163960
+  },
+  {
+    "source": "process/DisolucionNaOHTermometroEscena.glb5.glb",
+    "output": "disolucion.glb",
+    "sourceSha256": "426b6486904b30b693b0b3dc390d7896fefa0f380c116dda39278ac615144141",
+    "outputSha256": "a94b6b3ad5d15793ee97e82f75f9dcb7706689bd545e2d29e44a99885dd439a2",
+    "sourceBytes": 2032540,
+    "outputBytes": 187372
+  },
+  {
+    "source": "process/EmulsionEscena8.glb",
+    "output": "emulsion.glb",
+    "sourceSha256": "80a4b21d9c4aa32169f356bf03f1fa2270be3090746b2460d5361ee7a0ad1679",
+    "outputSha256": "8a2d3965f4084eca975d4c2c2e94038fbdec063537a960008a81c8aa7f6cfefe",
+    "sourceBytes": 2535576,
+    "outputBytes": 680444
+  },
+  {
+    "source": "process/MoldesEscena9-10.glb",
+    "output": "moldeo.glb",
+    "sourceSha256": "d0b3ffce73fa4e9a4ab759989382b30ef8aaafde53ad501b122725c4501da196",
+    "outputSha256": "15d122007f964779d60d7f708c87dcb4ac80fd39299a7013f59a786a9db0c401",
+    "sourceBytes": 2611664,
+    "outputBytes": 703580
   }
 ]

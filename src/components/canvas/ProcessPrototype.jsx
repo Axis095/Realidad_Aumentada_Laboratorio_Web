@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import usePerformanceProfile from '../../hooks/usePerformanceProfile'
-import { PROCESS_SCENES } from './processPrototypeState'
+import { PROCESS_STAGES, getStageScenes } from './processPrototypeState'
 import ProcessDiagnostics from './ProcessDiagnostics'
 import './ProcessPrototype.css'
 
-const initialPlayback = { sceneId: 'fill', progress: 0, playing: false, completed: false }
-
-export default function ProcessPrototype({ children }) {
+export default function ProcessPrototype({ children, stageIndex = 0 }) {
+  const stage = PROCESS_STAGES[stageIndex]
+  const scenes = useMemo(() => getStageScenes(stageIndex), [stageIndex])
+  const initialPlayback = useMemo(() => ({ sceneId: scenes[0].id, progress: 0, playing: false, completed: false }), [scenes])
   const { profile } = usePerformanceProfile()
   const [enabled, setEnabled] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -22,7 +23,7 @@ export default function ProcessPrototype({ children }) {
   const profileRef = useRef(profile)
   const visibleRef = useRef(true)
   const playbackRef = useRef(initialPlayback)
-  const selected = PROCESS_SCENES.find(item => item.id === playback.sceneId)
+  const selected = scenes.find(item => item.id === playback.sceneId) || scenes[0]
 
   useEffect(() => {
     profileRef.current = profile
@@ -53,6 +54,8 @@ export default function ProcessPrototype({ children }) {
           container: containerRef.current,
           signal: controller.signal,
           reduced: profileRef.current === 'reduced',
+          initialSceneId: initialPlayback.sceneId,
+          allowedSceneIds: stage.sceneIds,
           startedAt,
           diagnosticsEnabled: diagnosticsEnabledRef.current,
           onDiagnosticsReady: handle => {
@@ -71,7 +74,6 @@ export default function ProcessPrototype({ children }) {
         if (controller.signal.aborted) { runtime.dispose(); return }
         runtimeRef.current = runtime
         runtime.setQuality(profileRef.current === 'reduced')
-        setStatus('ready')
       } catch (failure) { fail(failure) }
     }
     start()
@@ -80,7 +82,7 @@ export default function ProcessPrototype({ children }) {
       runtime?.dispose()
       runtimeRef.current = null
     }
-  }, [enabled, attempt])
+  }, [enabled, attempt, initialPlayback, stage])
 
   useEffect(() => {
     const pause = () => {
@@ -103,22 +105,22 @@ export default function ProcessPrototype({ children }) {
   return (
     <section className="process-prototype" ref={sectionRef} aria-labelledby="process-prototype-title">
       <header className="process-prototype-heading">
-        <span className="learning-kicker">PROTOTIPO INTERACTIVO · OPCIONAL</span>
-        <h3 id="process-prototype-title">Del aceite a la mezcla</h3>
-        <p>Explora tres movimientos del proceso a tu ritmo. Este visor no sustituye las cinco etapas ni el reto de aprendizaje.</p>
+        <span className="learning-kicker">ANIMACIÓN DE LA ETAPA {stageIndex + 1} · OPCIONAL</span>
+        <h3 id="process-prototype-title">{stage.title}</h3>
+        <p>{stage.note}</p>
       </header>
       {!enabled ? <div className="process-prototype-intro">
         {children && <div className="process-prototype-scheme"><p>Esquema de la etapa seleccionada</p>{children}</div>}
-        <ol><li>Llenar el vaso</li><li>Verter la solución</li><li>Agitar la mezcla</li></ol>
+        <ol>{scenes.map(item => <li key={item.id}>{item.title}</li>)}</ol>
         <button type="button" onClick={() => setEnabled(true)}>Abrir prototipo 3D</button>
-        <p>El visor sustituye al esquema. Carga solo los recursos necesarios: unos 1,2 MiB para llenado y menos de 160 KB para cada animación adicional.</p>
+        <p>El visor sustituye al esquema y carga solo la escena seleccionada. Tú decides cuándo reproducirla; al cambiar de etapa, el visor se cierra.</p>
       </div> : <>
         <div className="process-prototype-toolbar">
           <span>{profile === 'reduced' ? 'Ligero · hasta 20 FPS' : 'Completo · hasta 30 FPS'}</span>
           <button type="button" className="process-prototype-secondary" onClick={() => { setEnabled(false); setStatus('idle') }}>Cerrar prototipo 3D</button>
         </div>
-        <div className="process-prototype-scenes" role="group" aria-label="Escenas del prototipo">
-          {PROCESS_SCENES.map((item, index) => <button type="button" key={item.id} disabled={!runtimeRef.current}
+        <div className="process-prototype-scenes" role="group" aria-label="Escenas de esta etapa">
+          {scenes.map((item, index) => <button type="button" key={item.id} disabled={!runtimeRef.current}
             aria-pressed={playback.sceneId === item.id} onClick={() => { setNotice(''); runtimeRef.current?.select(item.id) }}>
             <span>{index + 1}</span> {item.title}
           </button>)}

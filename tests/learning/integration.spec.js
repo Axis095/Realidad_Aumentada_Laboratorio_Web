@@ -6,16 +6,19 @@ const jsonGLB = data => JSON.parse(data.subarray(20, 20 + data.readUInt32LE(12))
 
 test('derived assets preserve source hashes, animation targets, and low-cost materials', () => {
   const manifest = JSON.parse(fs.readFileSync('public/models/optimized/manifest.json'))
-  expect(manifest).toHaveLength(4)
+  expect(manifest).toHaveLength(8)
   for (const entry of manifest) {
     const source = fs.readFileSync(`public/models/${entry.source}`), output = fs.readFileSync(`public/models/optimized/${entry.output}`)
     expect(hash(source)).toBe(entry.sourceSha256)
     expect(hash(output)).toBe(entry.outputSha256)
-    expect(output.length).toBeLessThan(165000)
+    expect(output.length).toBeLessThan(710000)
     const j = jsonGLB(output)
     expect(j.materials.some(m => m.extensions?.KHR_materials_transmission)).toBe(false)
     if (entry.source.startsWith('process/')) {
       const original = jsonGLB(source)
+      const triangles = j.nodes.filter(n => n.mesh !== undefined).reduce((sum, node) => sum + j.meshes[node.mesh].primitives.reduce((total, p) => total + j.accessors[p.indices].count / 3, 0), 0)
+      expect(triangles).toBeLessThan(23000)
+      expect(j.nodes.filter(n => n.mesh !== undefined).length).toBeLessThanOrEqual(25)
       expect(j.animations).toHaveLength(1)
       expect(j.animations[0].name).toBe(original.animations[0].name)
       const channels = (model) => model.animations[0].channels.map(c => `${model.nodes[c.target.node].name}:${c.target.path}`).sort()
@@ -113,6 +116,7 @@ test('molecules recover from missing files and lost context, and cancel pending 
 test('animated scenes cancel stale selections and recover without replacing the canvas', async ({ page }, info) => {
   await setup(page)
   await page.goto('/modulo/2')
+  await page.locator('.step-timeline button').nth(2).click()
   await expect(page.locator('.process-visual')).toHaveCount(1)
   await page.getByRole('button', { name: 'Abrir prototipo 3D' }).click()
   await expect(page.locator('.process-visual')).toHaveCount(0)
@@ -147,8 +151,6 @@ test('animated scenes cancel stale selections and recover without replacing the 
     await expect(stage).toHaveAttribute('data-playing', 'true')
     await page.getByRole('button', { name: 'Pausar', exact: true }).click()
   }
-  await page.getByRole('button', { name: /Llenado/ }).click()
-  await expect(stage).toHaveAttribute('data-status', 'ready')
   await expect(canvas).toHaveAttribute('data-identity', 'single')
   await page.getByRole('button', { name: /Preparar NaOH/ }).click()
   await expect(stage).toHaveCount(0)

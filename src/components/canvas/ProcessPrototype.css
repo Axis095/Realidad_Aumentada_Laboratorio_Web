@@ -12,7 +12,7 @@
 .process-prototype-intro p { margin-top: 10px; font-size: .75rem; }
 .process-prototype-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
 .process-prototype-toolbar > span { font-size: .75rem; color: #526b68; }
-.process-prototype-scenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 12px 0; }
+.process-prototype-scenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 7px; margin: 12px 0; }
 .process-prototype-scenes button { background: #fff; color: #17674f; border-color: #abcbbc; padding: 10px 4px; font-size: .78rem; }
 .process-prototype-scenes button[aria-pressed="true"] { background: #17674f; color: #fff; }
 .process-prototype-scenes button span { display: inline-block; font-size: .65rem; margin-right: 3px; }

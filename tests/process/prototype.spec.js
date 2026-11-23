@@ -55,7 +55,7 @@ test('module stays lightweight without opting in and preserves its learning step
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
-for (const width of [320, 1366]) test(`three scenes, playback, seeking and reset fit ${width}px`, async ({ page }, testInfo) => {
+for (const width of [320, 1366]) test(`stage-specific scenes, playback, seeking and reset fit ${width}px`, async ({ page }, testInfo) => {
   const errors = [], models = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('request', request => { if (/\/models\//.test(request.url())) models.push(new URL(request.url()).pathname) })
@@ -72,6 +72,12 @@ for (const width of [320, 1366]) test(`three scenes, playback, seeking and reset
   expect(await progress(page).inputValue()).toBe(paused)
   expect(await page.evaluate(() => window.__processDraws)).toBe(draws)
   for (const [name, value] of [['Llenado', '80'], ['Vertido', '50'], ['Agitación', '60']]) {
+    if (name === 'Vertido') {
+      await page.locator('.step-timeline button').nth(2).click()
+      await expect(canvas).toHaveCount(0)
+      await open(page)
+      await canvas.evaluate(element => { element.dataset.identity = 'original' })
+    }
     await panel(page).getByRole('button', { name: new RegExp(name) }).click()
     await expect(page.locator('.process-prototype-stage')).toHaveAttribute('data-status', 'ready')
     await expect(progress(page)).toHaveValue('0')

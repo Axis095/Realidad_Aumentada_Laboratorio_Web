@@ -101,6 +101,12 @@ test('each scene reports actual renders; pause freezes data without drawing and 
   await open3D(page)
   await page.getByLabel('Teléfono probado (opcional)').fill('Galaxy A04 de prueba')
   for (const [title, id] of [['Llenado', 'fill'], ['Vertido', 'pour'], ['Agitación', 'stir']]) {
+    if (id === 'pour') {
+      await page.locator('.step-timeline button').nth(2).click()
+      await toggle(page)
+      await open3D(page)
+      await page.getByLabel('Teléfono probado (opcional)').fill('Galaxy A04 de prueba')
+    }
     await page.getByRole('button', { name: new RegExp(title) }).click()
     await expectNoResult(page)
     await expect(diagnostic(page).locator('dd').first()).toHaveText(`${title} / 0 %`)
