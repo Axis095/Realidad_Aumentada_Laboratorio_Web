@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { MODULE1_INSTRUMENTS } from '../data/instruments'
 
 const useLabStore = create(
   persist(
@@ -83,16 +84,21 @@ const useLabStore = create(
     }),
     {
       name: 'labvirtual-progress',
-      version: 3,
-      migrate: (persistedState) => ({
-        ...(persistedState ?? {}),
-        pasosModulo2Explorados: persistedState?.pasosModulo2Explorados ?? [],
-        secuenciaModulo2Completada: persistedState?.secuenciaModulo2Completada
-          ?? persistedState?.modulosCompletados?.includes(2)
-          ?? false,
-        moleculaSeleccionada: persistedState?.moleculaSeleccionada ?? 'triglicerido',
-        moleculasExploradas: persistedState?.moleculasExploradas ?? [],
-      }),
+      version: 4,
+      migrate: (persistedState) => {
+        const explored = MODULE1_INSTRUMENTS.filter(item => persistedState?.instrumentosExplorados?.includes(item.id)).map(item => item.id)
+        return {
+          ...(persistedState ?? {}),
+          instrumentosExplorados: explored,
+          modulosCompletados: (persistedState?.modulosCompletados ?? []).filter(id => id !== 1 || explored.length === MODULE1_INSTRUMENTS.length),
+          pasosModulo2Explorados: persistedState?.pasosModulo2Explorados ?? [],
+          secuenciaModulo2Completada: persistedState?.secuenciaModulo2Completada
+            ?? persistedState?.modulosCompletados?.includes(2)
+            ?? false,
+          moleculaSeleccionada: persistedState?.moleculaSeleccionada ?? 'triglicerido',
+          moleculasExploradas: persistedState?.moleculasExploradas ?? [],
+        }
+      },
       partialize: (state) => ({
         moduloActual: state.moduloActual,
         ultimaRuta: state.ultimaRuta,

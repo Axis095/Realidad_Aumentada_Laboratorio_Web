@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import useLabStore from '../../store/Uselabstore'
+import { MODULE1_INSTRUMENTS } from '../../data/instruments'
 import './Bienvenida.css'
  
 export default function Bienvenida() {
@@ -10,9 +11,10 @@ export default function Bienvenida() {
   const pasosExplorados = useLabStore((state) => state.pasosModulo2Explorados)
   const secuenciaModulo2Completada = useLabStore((state) => state.secuenciaModulo2Completada)
   const moleculasExploradas = useLabStore((state) => state.moleculasExploradas)
+  const exploredCount = MODULE1_INSTRUMENTS.filter(item => instrumentosExplorados.includes(item.id)).length
   const progresoModulo1 = modulosCompletados.includes(1)
     ? 1
-    : Math.min(instrumentosExplorados.length / 10, 1)
+    : exploredCount / MODULE1_INSTRUMENTS.length
   const progresoModulo2 = modulosCompletados.includes(2)
     ? 1
     : Math.min((pasosExplorados.length + Number(secuenciaModulo2Completada)) / 6, 1)
@@ -66,7 +68,7 @@ export default function Bienvenida() {
             <b>{progresoGeneral}%</b>
           </div>
           <div className="home-progress-track"><span style={{ width: `${progresoGeneral}%` }} /></div>
-          <small>{modulosCompletados.length} de 3 módulos completados · {instrumentosExplorados.length} instrumentos explorados</small>
+          <small>{modulosCompletados.length} de 3 módulos completados · {exploredCount} instrumentos explorados</small>
         </section>
       )}
  

@@ -50,6 +50,7 @@
 .m1-tabs { display:flex; gap:8px; padding:12px 14px; border-bottom:1px solid rgba(15,23,42,0.04); overflow-x:auto }
 .m1-tab { display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; border:1px solid rgba(15,23,42,0.06); background:rgba(255,255,255,0.96); color:var(--mod-info-text,#475569); cursor:pointer; font-size:0.88rem }
 .m1-tab.active { border-color:var(--mod-color,var(--clr-blue)); background:var(--clr-blue-soft); color:var(--mod-page-text,var(--clr-text)) }
+.m1-tab { flex:0 0 auto; white-space:nowrap }
 .m1-tab-seen { color:var(--clr-green); font-size:.72rem; font-weight:900 }
 
 .m1-canvas-box { position:relative; height:460px }

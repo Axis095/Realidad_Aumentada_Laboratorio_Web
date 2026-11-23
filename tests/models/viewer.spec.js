@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { BoxGeometry, Group, Mesh, PerspectiveCamera, Vector3 } from 'three'
 import { getModelFrame, measureModel } from '../../src/utils/modelFraming.js'
+import { MODULE1_INSTRUMENTS } from '../../src/data/instruments.js'
+
+const ids = ['beaker', 'probeta', 'balanza', 'termo', 'agitador', 'espatula', 'guantes', 'parrilla', 'molde', 'gafas', 'mortero', 'soporte', 'vidrio-reloj', 'matraz-aforado', 'matraz-erlenmeyer', 'matraz-decantacion']
 
 test('normalization preserves the template and framing fits every corner in portrait and landscape', () => {
   for (const dimensions of [[15.6, 6.12, 9.83], [0.1, 3.23, 0.072], [55.5, 5, 47.3], [0.77, 1.02, 0.72]]) {
@@ -51,16 +54,20 @@ for (const width of [320, 1366]) {
     page.on('pageerror', error => errors.push(error.message))
     page.on('request', request => { if (request.url().includes('/models/')) modelRequests.push(request.url()) })
     await page.goto('/modulo/1')
-    const ids = ['beaker', 'probeta', 'balanza', 'termo', 'agitador', 'espatula', 'guantes', 'parrilla', 'molde', 'gafas']
+    await ready(page, 'beaker')
+    expect(modelRequests.map(url => new URL(url).pathname)).toEqual(['/models/VasoBlender.glb'])
+    await expect(page.locator('.m1-tab')).toHaveCount(16)
     for (const [index, id] of ids.entries()) {
       await page.locator('.m1-tab').nth(index).click()
       await ready(page, id)
-      if (['beaker', 'gafas', 'termo'].includes(id)) {
+      if (['beaker', 'soporte', 'matraz-aforado', 'matraz-erlenmeyer', 'matraz-decantacion', 'mortero', 'vidrio-reloj'].includes(id)) {
         await page.locator('.m1-canvas-box').screenshot({ path: testInfo.outputPath(`${id}-${width}.png`) })
       }
     }
     expect(modelRequests.some(url => url.endsWith('/AgitadorVidrio.glb'))).toBe(true)
-    expect(modelRequests.some(url => /VasoFinal|SoporteUniversal/.test(url))).toBe(false)
+    expect([...new Set(modelRequests.map(url => decodeURIComponent(new URL(url).pathname)))].sort())
+      .toEqual(MODULE1_INSTRUMENTS.map(item => item.modelUrl).sort())
+    await expect(page.getByRole('link', { name: 'Ver en AR' })).toHaveAttribute('href', '/ar/matraz-decantacion')
     // No context replacement when selecting another asset or toggling details.
     await page.locator('.m1-scene canvas').evaluate(canvas => { canvas.dataset.testIdentity = 'original' })
     await page.locator('.m1-tab').first().click()
@@ -92,7 +99,7 @@ for (const failure of ['404', 'html', 'corrupt']) {
     await page.goto('/modulo/1')
     await expect(page.getByRole('alert')).toContainText('No se pudo mostrar vaso de precipitados')
     await expect(page.locator('.m1-scene')).toHaveAttribute('data-model-status', 'error')
-    await expect(page.locator('.m1-tab')).toHaveCount(10)
+    await expect(page.locator('.m1-tab')).toHaveCount(16)
     if (failure === '404') await page.locator('.m1-canvas-box').screenshot({ path: testInfo.outputPath('error-mobile.png') })
     await page.getByRole('button', { name: 'Instrumento siguiente' }).click()
     await ready(page, 'probeta')
@@ -106,6 +113,33 @@ for (const failure of ['404', 'html', 'corrupt']) {
     expect(requests).toBeGreaterThanOrEqual(3)
   })
 }
+
+test('previous exploration survives the expanded catalog and completion requires all sixteen', async ({ page }) => {
+  await setup(page)
+  await page.addInitScript(explored => {
+    if (!localStorage.getItem('labvirtual-progress')) localStorage.setItem('labvirtual-progress', JSON.stringify({
+      version: 3,
+      state: { instrumentosExplorados: explored, modulosCompletados: [1, 2], pasosModulo2Explorados: [0, 1, 2, 3, 4], secuenciaModulo2Completada: true },
+    }))
+  }, ids.slice(0, 10))
+  await page.goto('/')
+  await expect(page.locator('.home-progress')).toHaveAttribute('aria-label', 'Progreso general 54%')
+  await page.goto('/modulo/1')
+  await ready(page, 'beaker')
+  await expect(page.locator('.m1-progress-card')).toHaveAttribute('aria-label', '10 de 16 instrumentos explorados')
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('labvirtual-progress')))
+  expect((await saved()).state.modulosCompletados).toEqual([2])
+  for (let index = 10; index < ids.length; index++) {
+    await page.locator('.m1-tab').nth(index).click()
+    await ready(page, ids[index])
+  }
+  await expect(page.locator('.m1-progress-card')).toContainText('¡Módulo completado!')
+  const progress = await saved()
+  expect(progress.version).toBe(4)
+  expect(progress.state.modulosCompletados).toEqual([2, 1])
+  expect(progress.state.instrumentosExplorados).toEqual(ids)
+  expect(progress.state.pasosModulo2Explorados).toEqual([0, 1, 2, 3, 4])
+})
 
 test('optional studio lighting failure does not hide the instrument', async ({ page }) => {
   await setup(page, 'full')

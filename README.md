@@ -140,9 +140,13 @@ validar la versión en celulares físicos.
 - `/ar/tarjeta?instrumento=probeta`: selector, QR descargable y tarjeta imprimible del instrumento.
 
 El catálogo está en `src/data/instruments.js`; también alimenta el Módulo 1.
-Los diez instrumentos del módulo se mantienen. Los modelos finales adicionales
-están disponibles en AR; los cuatro modelos antiguos no finales permanecen solo
-en el Módulo 1. No se reproducen animaciones automáticamente.
+El Módulo 1 incluye los 16 materiales de laboratorio disponibles: los diez anteriores
+y mortero y pistillo, soporte universal, vidrio de reloj, matraz aforado, matraz
+Erlenmeyer y embudo de decantación. Los 12 instrumentos finales también están
+disponibles en AR. Las moléculas y escenas del proceso pertenecen a sus módulos.
+Cada GLB se descarga al seleccionarlo, sin precargar todo el catálogo ni reproducir
+animaciones automáticamente. El progreso anterior se conserva sobre el nuevo total
+de 16 instrumentos; los seis nuevos quedan pendientes de explorar.
 
 ### Preparar tarjetas para un evento
 

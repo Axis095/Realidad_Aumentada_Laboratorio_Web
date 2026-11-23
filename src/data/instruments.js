@@ -124,7 +124,7 @@ const instruments = [
     "description": "Recipiente y pieza de mano que permiten triturar sólidos.",
     "use": "Se utiliza para reducir el tamaño de partículas y facilitar mezclas.",
     "question": "¿Qué cambia en un sólido cuando lo trituramos?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-07"
   },
@@ -136,7 +136,7 @@ const instruments = [
     "description": "Base con una varilla que sostiene pinzas y otros accesorios.",
     "use": "Permite montar instrumentos de forma estable durante un experimento.",
     "question": "¿Por qué importa que la base sea estable?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-08"
   },
@@ -148,7 +148,7 @@ const instruments = [
     "description": "Pieza circular de vidrio ligeramente cóncava.",
     "use": "Sirve para contener pequeñas muestras o cubrir un vaso de precipitados.",
     "question": "¿Qué ventajas tiene su forma cóncava?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-09"
   },
@@ -160,7 +160,7 @@ const instruments = [
     "description": "Recipiente calibrado para contener un volumen determinado.",
     "use": "Permite preparar soluciones hasta la marca de aforo.",
     "question": "¿Por qué debemos observar la marca a la altura de los ojos?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-10"
   },
@@ -172,7 +172,7 @@ const instruments = [
     "description": "Recipiente de cuerpo cónico y cuello estrecho.",
     "use": "Facilita mezclar líquidos mediante movimientos circulares.",
     "question": "¿Cómo ayuda su forma a reducir las salpicaduras?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-11"
   },
@@ -184,7 +184,7 @@ const instruments = [
     "description": "Recipiente con llave para separar líquidos inmiscibles.",
     "use": "Permite retirar por separado líquidos que forman capas.",
     "question": "¿Qué propiedades determinan cuál líquido queda abajo?",
-    "module1": false,
+    "module1": true,
     "ar": true,
     "markerCode": "LAB-12"
   }

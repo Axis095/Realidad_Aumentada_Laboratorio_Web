@@ -28,6 +28,7 @@ export default function Modulo1() {
   const [modal, setModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const model             = modelOptions[idx]
+  const exploredCount = modelOptions.filter(item => instrumentosExplorados.includes(item.id)).length
   const prev = () => setIdx(i => (i - 1 + modelOptions.length) % modelOptions.length)
   const next = () => setIdx(i => (i + 1) % modelOptions.length)
 
@@ -45,8 +46,17 @@ export default function Modulo1() {
   }, [model.id, setInstrumento])
 
   useEffect(() => {
-    if (instrumentosExplorados.length >= modelOptions.length) completarModulo(1)
-  }, [instrumentosExplorados.length, completarModulo])
+    if (exploredCount === modelOptions.length) completarModulo(1)
+  }, [exploredCount, completarModulo])
+
+  useEffect(() => {
+    const tabs = viewerRef.current?.querySelector('.m1-tabs')
+    const active = tabs?.querySelector('.m1-tab.active')
+    if (!active || modal) return
+    const bounds = tabs.getBoundingClientRect(), item = active.getBoundingClientRect()
+    if (item.left < bounds.left) tabs.scrollLeft += item.left - bounds.left - 12
+    else if (item.right > bounds.right) tabs.scrollLeft += item.right - bounds.right + 12
+  }, [idx, modal])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -149,7 +159,7 @@ export default function Modulo1() {
             Módulo 1
           </div>
           <h1 className="m1-title">Reconocimiento de material de laboratorio</h1>
-          <p className="m1-subtitle">Identifica los instrumentos necesarios para la reacción de saponificación.</p>
+          <p className="m1-subtitle">Explora {modelOptions.length} materiales de laboratorio y reconoce su función.</p>
         </header>
 
         <div className="m1-layout">
@@ -163,13 +173,13 @@ export default function Modulo1() {
               <span>Guía del módulo</span>
               <span>{sidebarOpen ? '−' : '+'}</span>
             </button>
-            <div className="m1-progress-card" aria-label={`${instrumentosExplorados.length} de ${modelOptions.length} instrumentos explorados`}>
+            <div className="m1-progress-card" aria-label={`${exploredCount} de ${modelOptions.length} instrumentos explorados`}>
               <div className="m1-progress-copy">
                 <strong>Tu exploración</strong>
-                <span>{instrumentosExplorados.length}/{modelOptions.length}</span>
+                <span>{exploredCount}/{modelOptions.length}</span>
               </div>
-              <div className="m1-progress-track"><span style={{ width: `${(instrumentosExplorados.length / modelOptions.length) * 100}%` }} /></div>
-              <small>{instrumentosExplorados.length === modelOptions.length ? '¡Módulo completado!' : 'Selecciona cada instrumento para completar el módulo.'}</small>
+              <div className="m1-progress-track"><span style={{ width: `${(exploredCount / modelOptions.length) * 100}%` }} /></div>
+              <small>{exploredCount === modelOptions.length ? '¡Módulo completado!' : 'Selecciona cada instrumento para completar el módulo.'}</small>
             </div>
             <div className="m1-sidebar-block">
               <div className="m1-sidebar-lbl" style={{ color: 'var(--clr-blue)' }}>Objetivo</div>
